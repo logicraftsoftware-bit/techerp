@@ -15,26 +15,22 @@
             <div><p class="font-bold tracking-wide text-white">FieldService</p><p class="text-xs text-slate-500">Operations CRM</p></div>
         </div>
         <nav class="h-[calc(100vh-5rem)] overflow-y-auto px-4 py-6 text-sm">
-            @php
-                $nav = [
-                    ['Dashboard','dashboard','dashboard','grid'], ['Customers',null,'customers.*','users'], ['Machines',null,'machines.*','machine'],
-                    ['Technicians',null,'technicians.*','tool'], ['Attendance',null,'attendance.*','calendar'], ['Leave',null,'leave.*','leave'],
-                    ['Inventory',null,'inventory.*','box'], ['Service Requests',null,'service-requests.*','ticket'], ['Job Cards',null,'jobs.*','clipboard'],
-                    ['Salary',null,'salary.*','wallet'], ['Expenses',null,'expenses.*','receipt'], ['AMC & Maintenance',null,'amc.*','shield'],
-                    ['Reports',null,'reports.*','chart'], ['Users','users.index','users.*','user-cog'], ['Settings',null,'settings.*','settings'],
-                ];
-            @endphp
             <p class="mb-3 px-3 text-[11px] font-semibold uppercase tracking-[.18em] text-slate-600">Workspace</p>
             <div class="space-y-1">
-                @foreach($nav as [$label,$route,$active,$icon])
-                    @if($route)
-                    <a href="{{ route($route) }}" class="nav-link {{ request()->routeIs($active) ? 'nav-link-active' : '' }}">
-                        <span class="size-2 rounded-full {{ request()->routeIs($active) ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><span>{{ $label }}</span>
-                    </a>
-                    @else
-                    <span class="nav-link cursor-not-allowed opacity-50" title="Available in a later phase"><span class="size-2 rounded-full bg-slate-700"></span><span>{{ $label }}</span><span class="ml-auto text-[9px] uppercase">Soon</span></span>
-                    @endif
+                <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'nav-link-active' : '' }}"><span class="size-2 rounded-full {{ request()->routeIs('dashboard') ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><span>Dashboard</span></a>
+                @foreach(config('crm.navigation') as $group => $items)
+                    @php $groupOpen = collect($items)->contains(fn($item) => request()->routeIs('modules.show') && request()->route('module') === $item[0]); @endphp
+                    <div x-data="{ open: {{ $groupOpen ? 'true' : 'false' }} }" class="pt-2">
+                        <button type="button" @click="open=!open" class="flex w-full items-center px-3 py-2 text-[10px] font-semibold uppercase tracking-[.16em] text-slate-600 hover:text-slate-400"><span>{{ $group }}</span><span class="ml-auto transition" :class="open && 'rotate-90'">›</span></button>
+                        <div x-show="open" class="space-y-1">
+                            @foreach($items as [$slug, $label, $description])
+                                @php $active = request()->routeIs('modules.show') && request()->route('module') === $slug; @endphp
+                                <a href="{{ route('modules.show', $slug) }}" class="nav-link {{ $active ? 'nav-link-active' : '' }}" title="{{ $description }}"><span class="size-2 rounded-full {{ $active ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><span>{{ $label }}</span></a>
+                            @endforeach
+                        </div>
+                    </div>
                 @endforeach
+                <div class="pt-2"><p class="px-3 py-2 text-[10px] font-semibold uppercase tracking-[.16em] text-slate-600">Administration</p><a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'nav-link-active' : '' }}"><span class="size-2 rounded-full {{ request()->routeIs('users.*') ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><span>Users</span></a></div>
             </div>
         </nav>
     </aside>
@@ -43,7 +39,7 @@
             <button class="mr-4 rounded-xl p-2 hover:bg-slate-100 lg:hidden" @click="sidebar=true" aria-label="Open navigation">☰</button>
             <div><h1 class="text-lg font-bold text-slate-900">{{ $title ?? 'Dashboard' }}</h1><p class="hidden text-xs text-slate-400 sm:block">{{ now()->format('l, d F Y') }}</p></div>
             <div class="ml-auto flex items-center gap-3">
-                <button class="relative grid size-10 place-items-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50" aria-label="Notifications">🔔<span class="absolute right-2 top-2 size-2 rounded-full bg-rose-500 ring-2 ring-white"></span></button>
+                <a href="{{ route('modules.show', 'notifications') }}" class="relative grid size-10 place-items-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50" aria-label="Notifications">🔔<span class="absolute right-2 top-2 size-2 rounded-full bg-rose-500 ring-2 ring-white"></span></a>
                 <div class="relative" @click.outside="profile=false">
                     <button @click="profile=!profile" class="flex items-center gap-3 rounded-xl p-1.5 hover:bg-slate-50">
                         <span class="grid size-9 place-items-center rounded-xl bg-blue-600 font-bold text-white">{{ str(auth()->user()->name)->substr(0,1)->upper() }}</span>

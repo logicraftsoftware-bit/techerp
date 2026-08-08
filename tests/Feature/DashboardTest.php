@@ -19,4 +19,15 @@ class DashboardTest extends TestCase
     {
         $this->actingAs(User::factory()->create())->get('/dashboard')->assertOk()->assertSee('Work overview');
     }
+
+    public function test_authenticated_user_can_open_every_crm_module_menu(): void
+    {
+        $user = User::factory()->create();
+
+        foreach (collect(config('crm.navigation'))->flatten(1) as $module) {
+            $this->actingAs($user)->get(route('modules.show', $module[0]))
+                ->assertOk()
+                ->assertSee($module[1]);
+        }
+    }
 }
