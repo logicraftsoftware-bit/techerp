@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\MachineRequest;
+use App\Models\Brand;
 use App\Models\Customer;
 use App\Models\Machine;
 use Illuminate\Http\RedirectResponse;
@@ -22,12 +23,12 @@ class MachineController extends Controller
 
     public function create(): View
     {
-        return view('master.machines.form', ['machine' => new Machine, 'customers' => Customer::orderBy('customer_name')->get()]);
+        return $this->form(new Machine);
     }
 
     public function store(MachineRequest $r): RedirectResponse
     {
-        $m = DB::transaction(fn () => Machine::create($r->safe()->except('documents', 'document_type')));
+        $m = DB::transaction(fn () => Machine::create($this->data($r)));
         $this->files($r, $m);
 
         return to_route('machines.index')->with('success', 'Machine created.');
@@ -40,12 +41,12 @@ class MachineController extends Controller
 
     public function edit(Machine $machine): View
     {
-        return view('master.machines.form', ['machine' => $machine, 'customers' => Customer::orderBy('customer_name')->get()]);
+        return $this->form($machine);
     }
 
     public function update(MachineRequest $r, Machine $machine): RedirectResponse
     {
-        $machine->update($r->safe()->except('documents', 'document_type'));
+        $machine->update($this->data($r));
         $this->files($r, $machine);
 
         return to_route('machines.index')->with('success', 'Machine updated.');
@@ -65,5 +66,18 @@ class MachineController extends Controller
         foreach ($r->file('documents', []) as $file) {
             $m->documents()->create(['document_type' => $r->document_type ?? 'other', 'title' => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), 'file_path' => $file->store('machines', 'public'), 'original_name' => $file->getClientOriginalName(), 'mime_type' => $file->getMimeType(), 'file_size' => $file->getSize()]);
         }
+    }
+
+    private function form(Machine $machine): View
+    {
+        return view('master.machines.form', ['machine' => $machine, 'customers' => Customer::orderBy('customer_name')->get(), 'brands' => Brand::orderBy('brand_name')->get()]);
+    }
+
+    private function data(MachineRequest $request): array
+    {
+        $data = $request->safe()->except('documents', 'document_type');
+        $data['brand'] = isset($data['brand_id']) ? Brand::find($data['brand_id'])?->brand_name : null;
+
+        return $data;
     }
 }

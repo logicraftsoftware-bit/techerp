@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Brand;
 use App\Models\Customer;
 use App\Models\Role;
 use App\Models\Skill;
@@ -43,5 +44,15 @@ class MasterDataTest extends TestCase
         $s = Skill::create(['name' => 'Electrical', 'category' => 'electrical', 'is_active' => true]);
         $this->post(route('technicians.store'), ['employee_code' => 'T1', 'name' => 'Tech', 'mobile' => '8', 'joining_date' => '2026-01-01', 'employment_type' => 'full_time', 'status' => 'active', 'salary_type' => 'monthly', 'skills' => [$s->id]])->assertRedirect(route('technicians.index'));
         $this->assertTrue(Technician::first()->skills->contains($s));
+    }
+
+    public function test_brand_crud_and_machine_mapping(): void
+    {
+        $this->post(route('brands.store'), ['brand_name' => 'Daikin'])->assertRedirect(route('brands.index'));
+        $brand = Brand::firstOrFail();
+        $this->put(route('brands.update', $brand), ['brand_name' => 'Daikin India'])->assertRedirect(route('brands.index'));
+        $this->assertDatabaseHas('brands', ['brand_name' => 'Daikin India']);
+        $this->delete(route('brands.destroy', $brand))->assertRedirect();
+        $this->assertDatabaseMissing('brands', ['id' => $brand->id]);
     }
 }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MachineController;
@@ -22,6 +23,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/modules/{module}', ModuleController::class)->name('modules.show');
     Route::resources(['customers' => CustomerController::class, 'machines' => MachineController::class, 'technicians' => TechnicianController::class]);
     Route::resource('skills', SkillController::class)->except('show');
+    Route::resource('brands', BrandController::class)->except('show');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'password'])->name('profile.password');

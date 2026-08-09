@@ -4,6 +4,7 @@ return [
     'navigation' => [
         'Master Data' => [
             ['customers', 'Customers', 'Customer profiles, contacts and service history'],
+            ['brands', 'Brand Master', 'Machine brand names'],
             ['machines', 'Machines', 'Assets, documents and maintenance history'],
             ['technicians', 'Technicians', 'Staff profiles, employment and salary structure'],
             ['skills', 'Technician Skills', 'Skill master, levels and certifications'],
