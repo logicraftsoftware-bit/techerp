@@ -6,9 +6,9 @@ return [
             ['customers', 'Customers', 'Customer profiles, contacts and service history'],
             ['brands', 'Brand Master', 'Machine brand names'],
             ['departments', 'Department Master', 'Department names'],
+            ['skills', 'Technician Skills', 'Skill master, levels and certifications'],
             ['machines', 'Machines', 'Assets, documents and maintenance history'],
             ['technicians', 'Technicians', 'Staff profiles, employment and salary structure'],
-            ['skills', 'Technician Skills', 'Skill master, levels and certifications'],
         ],
         'Workforce' => [
             ['attendance', 'Attendance', 'Daily, monthly and bulk attendance'],
