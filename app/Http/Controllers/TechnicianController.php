@@ -90,6 +90,9 @@ class TechnicianController extends Controller
         if ($request->filled('password')) {
             $data['password'] = Hash::make((string) $request->string('password'));
         }
+        foreach (['monthly_salary', 'daily_salary', 'overtime_rate', 'travel_allowance', 'food_allowance', 'other_allowance', 'pf', 'esi'] as $field) {
+            $data[$field] = $data[$field] ?? 0;
+        }
 
         return $data;
     }
