@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Brand;
 use App\Models\Customer;
+use App\Models\Department;
 use App\Models\Machine;
 use App\Models\Role;
 use App\Models\Skill;
@@ -66,6 +67,21 @@ class MasterDataTest extends TestCase
         $this->assertDatabaseHas('brands', ['brand_name' => 'Daikin India']);
         $this->delete(route('brands.destroy', $brand))->assertRedirect();
         $this->assertDatabaseMissing('brands', ['id' => $brand->id]);
+    }
+
+    public function test_department_crud(): void
+    {
+        $this->post(route('departments.store'), ['department_name' => 'Service'])
+            ->assertRedirect(route('departments.index'));
+        $department = Department::firstOrFail();
+
+        $this->get(route('departments.index'))->assertOk()->assertSee('Service');
+        $this->put(route('departments.update', $department), ['department_name' => 'Field Service'])
+            ->assertRedirect(route('departments.index'));
+        $this->assertDatabaseHas('departments', ['department_name' => 'Field Service']);
+
+        $this->delete(route('departments.destroy', $department))->assertRedirect();
+        $this->assertDatabaseMissing('departments', ['id' => $department->id]);
     }
 
     public function test_machine_index_renders_with_records(): void

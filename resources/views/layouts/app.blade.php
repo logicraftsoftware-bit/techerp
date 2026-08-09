@@ -24,7 +24,7 @@
                         <button type="button" @click="open=!open" class="flex w-full items-center px-3 py-2 text-[10px] font-semibold uppercase tracking-[.16em] text-slate-600 hover:text-slate-400"><span>{{ $group }}</span><span class="ml-auto transition" :class="open && 'rotate-90'">›</span></button>
                         <div x-show="open" class="space-y-1">
                             @foreach($items as [$slug, $label, $description])
-                                @php $resource = ['customers','brands','machines','technicians','skills']; $active = in_array($slug,$resource) ? request()->routeIs($slug.'.*') : (request()->routeIs('modules.show') && request()->route('module') === $slug); @endphp
+                                @php $resource = ['customers','brands','departments','machines','technicians','skills']; $active = in_array($slug,$resource) ? request()->routeIs($slug.'.*') : (request()->routeIs('modules.show') && request()->route('module') === $slug); @endphp
                                 <a href="{{ in_array($slug,$resource) ? route($slug.'.index') : route('modules.show', $slug) }}" class="nav-link {{ $active ? 'nav-link-active' : '' }}" title="{{ $description }}"><span class="size-2 rounded-full {{ $active ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><span>{{ $label }}</span></a>
                             @endforeach
                         </div>
