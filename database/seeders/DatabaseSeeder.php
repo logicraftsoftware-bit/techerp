@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(RolePermissionSeeder::class);
+        $this->call(MasterDataSeeder::class);
         $admin = User::updateOrCreate(['email' => 'admin@fieldcrm.test'], [
             'name' => 'System Administrator',
             'phone' => '9999999999',
