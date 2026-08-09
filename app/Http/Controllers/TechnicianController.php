@@ -11,7 +11,9 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TechnicianController extends Controller
 {
@@ -42,7 +44,14 @@ class TechnicianController extends Controller
 
     public function show(Technician $technician): View
     {
-        return view('master.technicians.show', ['technician' => $technician->load(['manager', 'skills'])]);
+        return view('master.technicians.show', ['technician' => $technician->load(['manager', 'reportingUser.roles', 'departmentMaster', 'skills'])]);
+    }
+
+    public function photo(Technician $technician): StreamedResponse
+    {
+        abort_unless($technician->profile_photo && Storage::disk('public')->exists($technician->profile_photo), 404);
+
+        return Storage::disk('public')->response($technician->profile_photo, basename($technician->profile_photo), [], 'inline');
     }
 
     public function edit(Technician $technician): View

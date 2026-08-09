@@ -42,7 +42,7 @@ class Technician extends Model
         return $this->belongsTo(self::class, 'reporting_manager_id');
     }
 
-    public function department(): BelongsTo
+    public function departmentMaster(): BelongsTo
     {
         return $this->belongsTo(Department::class);
     }

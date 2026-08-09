@@ -59,6 +59,15 @@ class MasterDataTest extends TestCase
         $this->assertMatchesRegularExpression('/^TE\d{6}$/', Technician::firstOrFail()->employee_code);
         $this->assertSame('0.00', Technician::firstOrFail()->daily_salary);
         $this->assertTrue(Technician::first()->skills->contains($s));
+        Storage::fake('public');
+        Storage::disk('public')->put('technicians/profile.jpg', 'photo-content');
+        $technician = Technician::firstOrFail();
+        $technician->update(['profile_photo' => 'technicians/profile.jpg']);
+        $this->get(route('technicians.photo', $technician))->assertOk();
+        $this->get(route('technicians.show', $technician))->assertOk()
+            ->assertSee('Personal Information')
+            ->assertSee('Salary Structure')
+            ->assertSee(route('technicians.photo', $technician));
     }
 
     public function test_brand_crud_and_machine_mapping(): void

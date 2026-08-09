@@ -24,6 +24,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/modules/{module}', ModuleController::class)->name('modules.show');
     Route::get('/machine-documents/{document}', [MachineController::class, 'document'])->name('machine-documents.show');
     Route::delete('/machine-documents/{document}', [MachineController::class, 'destroyDocument'])->name('machine-documents.destroy');
+    Route::get('/technicians/{technician}/photo', [TechnicianController::class, 'photo'])->name('technicians.photo');
     Route::resources(['customers' => CustomerController::class, 'machines' => MachineController::class, 'technicians' => TechnicianController::class]);
     Route::resource('skills', SkillController::class)->except('show');
     Route::resource('brands', BrandController::class)->except('show');
