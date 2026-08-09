@@ -30,7 +30,7 @@
             </tr>
         </thead>
         <tbody class="divide-y divide-slate-100">
-            @forelse($machines as $machine)
+            @forelse($records as $machine)
                 <tr>
                     <td class="px-4 py-4">
                         <a class="font-semibold text-blue-600" href="{{ route('machines.show', $machine) }}">{{ $machine->machine_code }}</a>
@@ -60,5 +60,5 @@
     </table>
 </div>
 
-<div class="mt-5">{{ $machines->links() }}</div>
+<div class="mt-5">{{ $records->links() }}</div>
 @endsection

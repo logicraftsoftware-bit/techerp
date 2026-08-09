@@ -66,4 +66,12 @@ class MasterDataTest extends TestCase
         $this->delete(route('brands.destroy', $brand))->assertRedirect();
         $this->assertDatabaseMissing('brands', ['id' => $brand->id]);
     }
+
+    public function test_machine_index_renders_with_records(): void
+    {
+        $this->actingAs($this->superAdmin())
+            ->get(route('machines.index'))
+            ->assertOk()
+            ->assertSee('Free Service');
+    }
 }
