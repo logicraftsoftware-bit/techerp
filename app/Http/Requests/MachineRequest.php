@@ -17,10 +17,22 @@ class MachineRequest extends FormRequest
         $id = $this->route('machine')?->id;
 
         return [
-            'machine_code' => ['required', 'max:50', Rule::unique('machines')->ignore($id)], 'machine_name' => ['required', 'max:150'], 'machine_type' => ['required', 'max:100'], 'brand_id' => ['nullable', 'exists:brands,id'], 'model' => ['nullable', 'max:100'], 'serial_number' => ['nullable', 'max:100', Rule::unique('machines')->ignore($id)], 'asset_number' => ['nullable', 'max:100', Rule::unique('machines')->ignore($id)], 'customer_id' => ['required', 'exists:customers,id'],
-            'installation_date' => ['nullable', 'date'], 'warranty_start' => ['nullable', 'date'], 'warranty_end' => ['nullable', 'date', 'after_or_equal:warranty_start'], 'amc_start' => ['nullable', 'date'], 'amc_end' => ['nullable', 'date', 'after_or_equal:amc_start'], 'service_frequency' => ['nullable', 'integer', 'min:1'], 'status' => ['required', Rule::in(['active', 'inactive', 'under_maintenance', 'decommissioned'])],
-            'site_name' => ['nullable', 'max:150'], 'address' => ['nullable'], 'city' => ['nullable', 'max:100'], 'state' => ['nullable', 'max:100'], 'pin_code' => ['nullable', 'max:10'], 'latitude' => ['nullable', 'numeric', 'between:-90,90'], 'longitude' => ['nullable', 'numeric', 'between:-180,180'], 'notes' => ['nullable'],
-            'documents.*' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,pdf,doc,docx'], 'document_type' => ['nullable', Rule::in(['photo', 'invoice', 'warranty', 'amc', 'manual', 'other'])],
+            'machine_name' => ['required', 'string', 'max:150'],
+            'brand_id' => ['required', 'exists:brands,id'],
+            'model' => ['required', 'string', 'max:100'],
+            'serial_number' => ['nullable', 'max:100', Rule::unique('machines')->ignore($id)],
+            'asset_number' => ['nullable', 'max:100', Rule::unique('machines')->ignore($id)],
+            'manufacturing_date' => ['nullable', 'date', 'before_or_equal:today'],
+            'service_period' => ['required', Rule::in(['4_months', '6_months', '1_year', '2_years'])],
+            'buying_price' => ['required', 'numeric', 'min:0'],
+            'selling_price' => ['required', 'numeric', 'min:0'],
+            'total_stock' => ['required', 'integer', 'min:0'],
+            'location_name' => ['required', 'string', 'max:190'],
+            'status' => ['required', Rule::in(['active', 'inactive'])],
+            'machine_photos' => ['nullable', 'array', 'max:10'],
+            'machine_photos.*' => ['image', 'max:5120'],
+            'warranty_card' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,pdf'],
+            'service_coupon' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,pdf'],
         ];
     }
 }

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\MachineRequest;
 use App\Models\Brand;
-use App\Models\Customer;
 use App\Models\Machine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,7 +35,7 @@ class MachineController extends Controller
 
     public function show(Machine $machine): View
     {
-        return view('master.machines.show', ['machine' => $machine->load(['customer', 'documents'])]);
+        return view('master.machines.show', ['machine' => $machine->load(['brandMaster', 'documents'])]);
     }
 
     public function edit(Machine $machine): View
@@ -63,19 +62,29 @@ class MachineController extends Controller
 
     private function files(MachineRequest $r, Machine $m): void
     {
-        foreach ($r->file('documents', []) as $file) {
-            $m->documents()->create(['document_type' => $r->document_type ?? 'other', 'title' => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), 'file_path' => $file->store('machines', 'public'), 'original_name' => $file->getClientOriginalName(), 'mime_type' => $file->getMimeType(), 'file_size' => $file->getSize()]);
+        foreach ($r->file('machine_photos', []) as $file) {
+            $this->saveFile($m, $file, 'photo');
         }
+        foreach (['warranty_card' => 'warranty', 'service_coupon' => 'service_coupon'] as $field => $type) {
+            if ($r->hasFile($field)) {
+                $this->saveFile($m, $r->file($field), $type);
+            }
+        }
+    }
+
+    private function saveFile(Machine $machine, $file, string $type): void
+    {
+        $machine->documents()->create(['document_type' => $type, 'title' => pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), 'file_path' => $file->store('machines', 'public'), 'original_name' => $file->getClientOriginalName(), 'mime_type' => $file->getMimeType(), 'file_size' => $file->getSize()]);
     }
 
     private function form(Machine $machine): View
     {
-        return view('master.machines.form', ['machine' => $machine, 'customers' => Customer::orderBy('customer_name')->get(), 'brands' => Brand::orderBy('brand_name')->get()]);
+        return view('master.machines.form', ['machine' => $machine, 'brands' => Brand::orderBy('brand_name')->get()]);
     }
 
     private function data(MachineRequest $request): array
     {
-        $data = $request->safe()->except('documents', 'document_type');
+        $data = $request->safe()->except('machine_photos', 'warranty_card', 'service_coupon');
         $data['brand'] = isset($data['brand_id']) ? Brand::find($data['brand_id'])?->brand_name : null;
 
         return $data;
