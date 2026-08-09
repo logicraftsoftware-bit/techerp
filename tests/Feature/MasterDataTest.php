@@ -60,14 +60,18 @@ class MasterDataTest extends TestCase
         $this->assertSame('0.00', Technician::firstOrFail()->daily_salary);
         $this->assertTrue(Technician::first()->skills->contains($s));
         Storage::fake('public');
-        Storage::disk('public')->put('technicians/profile.jpg', 'photo-content');
+        Storage::disk('public')->put('technicians/profile.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='));
         $technician = Technician::firstOrFail();
-        $technician->update(['profile_photo' => 'technicians/profile.jpg']);
+        $technician->update(['profile_photo' => 'technicians/profile.png']);
         $this->get(route('technicians.photo', $technician))->assertOk();
         $this->get(route('technicians.show', $technician))->assertOk()
             ->assertSee('Personal Information')
             ->assertSee('Salary Structure')
             ->assertSee(route('technicians.photo', $technician));
+        $this->get(route('technicians.id-card', $technician))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertDownload($technician->employee_code.'-id-card.pdf');
     }
 
     public function test_brand_crud_and_machine_mapping(): void

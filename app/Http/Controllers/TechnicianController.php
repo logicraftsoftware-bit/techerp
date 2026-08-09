@@ -7,8 +7,10 @@ use App\Models\Department;
 use App\Models\Skill;
 use App\Models\Technician;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -52,6 +54,21 @@ class TechnicianController extends Controller
         abort_unless($technician->profile_photo && Storage::disk('public')->exists($technician->profile_photo), 404);
 
         return Storage::disk('public')->response($technician->profile_photo, basename($technician->profile_photo), [], 'inline');
+    }
+
+    public function idCard(Technician $technician): Response
+    {
+        $technician->load(['departmentMaster']);
+        $logo = $this->dataUri(public_path('images/fieldservice-logo.png'), 'image/png');
+        $photo = null;
+
+        if ($technician->profile_photo && Storage::disk('public')->exists($technician->profile_photo)) {
+            $photo = 'data:'.(Storage::disk('public')->mimeType($technician->profile_photo) ?: 'image/jpeg').';base64,'.base64_encode(Storage::disk('public')->get($technician->profile_photo));
+        }
+
+        return Pdf::loadView('master.technicians.id-card', compact('technician', 'logo', 'photo'))
+            ->setPaper([0, 0, 153.07, 243.78])
+            ->download($technician->employee_code.'-id-card.pdf');
     }
 
     public function edit(Technician $technician): View
@@ -104,5 +121,10 @@ class TechnicianController extends Controller
         }
 
         return $data;
+    }
+
+    private function dataUri(string $path, string $mime): string
+    {
+        return 'data:'.$mime.';base64,'.base64_encode(file_get_contents($path));
     }
 }

@@ -10,7 +10,7 @@
         @endif
         <div><p class="text-sm font-semibold text-blue-600">{{ $technician->employee_code }}</p><h2 class="text-3xl font-bold">{{ $technician->name }}</h2><p class="text-slate-500">{{ $technician->designation ?: 'Technician' }} · {{ str($technician->employment_type)->replace('_', ' ')->title() }}</p></div>
     </div>
-    <a class="btn-primary" href="{{ route('technicians.edit', $technician) }}">Edit Technician</a>
+    <div class="flex gap-3"><a class="btn-secondary" href="{{ route('technicians.id-card', $technician) }}">Download ID Card</a><a class="btn-primary" href="{{ route('technicians.edit', $technician) }}">Edit Technician</a></div>
 </div>
 
 <div class="grid gap-6 xl:grid-cols-2">
