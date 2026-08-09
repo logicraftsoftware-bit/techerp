@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Requests\MachineRequest;
 use App\Models\Brand;
 use App\Models\Machine;
+use App\Models\MachineDocument;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MachineController extends Controller
 {
@@ -36,6 +38,18 @@ class MachineController extends Controller
     public function show(Machine $machine): View
     {
         return view('master.machines.show', ['machine' => $machine->load(['brandMaster', 'documents'])]);
+    }
+
+    public function document(MachineDocument $document): StreamedResponse
+    {
+        abort_unless(Storage::disk('public')->exists($document->file_path), 404);
+
+        return Storage::disk('public')->response(
+            $document->file_path,
+            $document->original_name,
+            ['Content-Type' => $document->mime_type ?: 'application/octet-stream'],
+            'inline'
+        );
     }
 
     public function edit(Machine $machine): View

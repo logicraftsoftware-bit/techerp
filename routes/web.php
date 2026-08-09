@@ -21,6 +21,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/modules/{module}', ModuleController::class)->name('modules.show');
+    Route::get('/machine-documents/{document}', [MachineController::class, 'document'])->name('machine-documents.show');
     Route::resources(['customers' => CustomerController::class, 'machines' => MachineController::class, 'technicians' => TechnicianController::class]);
     Route::resource('skills', SkillController::class)->except('show');
     Route::resource('brands', BrandController::class)->except('show');

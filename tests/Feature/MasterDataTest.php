@@ -11,6 +11,7 @@ use App\Models\Technician;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class MasterDataTest extends TestCase
@@ -72,5 +73,17 @@ class MasterDataTest extends TestCase
         $this->get(route('machines.index'))
             ->assertOk()
             ->assertSee('Free Service');
+    }
+
+    public function test_machine_document_is_served_without_public_storage_link(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('machines/photo.webp', 'image-content');
+        $machine = Machine::create(['machine_name' => 'Press', 'machine_code' => 'PR123456', 'model' => 'P1', 'service_period' => '4_months', 'buying_price' => 1, 'selling_price' => 2, 'total_stock' => 1, 'location_name' => 'Store', 'status' => 'active']);
+        $document = $machine->documents()->create(['document_type' => 'photo', 'title' => 'Photo', 'file_path' => 'machines/photo.webp', 'original_name' => 'photo.webp', 'mime_type' => 'image/webp', 'file_size' => 13]);
+
+        $this->get(route('machine-documents.show', $document))
+            ->assertOk()
+            ->assertHeader('content-type', 'image/webp');
     }
 }
