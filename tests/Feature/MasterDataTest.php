@@ -36,6 +36,15 @@ class MasterDataTest extends TestCase
         $this->assertSoftDeleted($c);
     }
 
+    public function test_customer_form_uses_map_picker_with_hidden_coordinates(): void
+    {
+        $this->get(route('customers.create'))->assertOk()
+            ->assertSee('Customer Location')
+            ->assertSee('customer-map')
+            ->assertDontSee('label>Latitude', false)
+            ->assertDontSee('label>Longitude', false);
+    }
+
     public function test_machine_technician_and_skill_crud(): void
     {
         $c = Customer::create(['customer_code' => 'C1', 'customer_type' => 'company', 'customer_name' => 'Acme', 'mobile' => '9', 'address' => 'A', 'city' => 'C', 'state' => 'S', 'pin_code' => '1', 'status' => 'active']);
