@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\TechnicianRequest;
+use App\Models\Department;
 use App\Models\Skill;
 use App\Models\Technician;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class TechnicianController extends Controller
@@ -27,7 +30,7 @@ class TechnicianController extends Controller
     public function store(TechnicianRequest $r): RedirectResponse
     {
         DB::transaction(function () use ($r) {
-            $data = $r->safe()->except('skills', 'profile_photo');
+            $data = $this->data($r);
             if ($r->hasFile('profile_photo')) {
                 $data['profile_photo'] = $r->file('profile_photo')->store('technicians', 'public');
             }$t = Technician::create($data);
@@ -50,7 +53,7 @@ class TechnicianController extends Controller
     public function update(TechnicianRequest $r, Technician $technician): RedirectResponse
     {
         DB::transaction(function () use ($r, $technician) {
-            $data = $r->safe()->except('skills', 'profile_photo');
+            $data = $this->data($r);
             if ($r->hasFile('profile_photo')) {
                 $data['profile_photo'] = $r->file('profile_photo')->store('technicians', 'public');
             }$technician->update($data);
@@ -70,6 +73,24 @@ class TechnicianController extends Controller
 
     private function form(Technician $technician): View
     {
-        return view('master.technicians.form', compact('technician') + ['managers' => Technician::whereKeyNot($technician->id)->orderBy('name')->get(), 'skills' => Skill::where('is_active',true)->orderBy('name')->get()]);
+        return view('master.technicians.form', compact('technician') + ['managers' => Technician::whereKeyNot($technician->id)->orderBy('name')->get(), 'adminUsers' => User::with('roles')->where('is_active', true)->orderBy('name')->get(), 'departments' => Department::orderBy('department_name')->get(), 'skills' => Skill::where('is_active', true)->orderBy('name')->get()]);
+    }
+
+    private function data(TechnicianRequest $request): array
+    {
+        $data = $request->safe()->except('skills', 'profile_photo', 'reporting_manager', 'password');
+        $data['department'] = isset($data['department_id']) ? Department::find($data['department_id'])?->department_name : null;
+        $data['reporting_manager_id'] = null;
+        $data['reporting_user_id'] = null;
+
+        if ($manager = $request->validated('reporting_manager')) {
+            [$type, $id] = explode(':', $manager);
+            $data[$type === 'technician' ? 'reporting_manager_id' : 'reporting_user_id'] = $id;
+        }
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make((string) $request->string('password'));
+        }
+
+        return $data;
     }
 }

@@ -14,6 +14,24 @@ class Technician extends Model
 
     protected $guarded = ['id'];
 
+    protected $hidden = ['password'];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Technician $technician) {
+            if ($technician->employee_code) {
+                return;
+            }
+
+            $prefix = str($technician->name)->upper()->replaceMatches('/[^A-Z]/', '')->substr(0, 2)->padRight(2, 'X');
+            do {
+                $code = $prefix.random_int(100000, 999999);
+            } while (self::withTrashed()->where('employee_code', $code)->exists());
+
+            $technician->employee_code = $code;
+        });
+    }
+
     protected function casts(): array
     {
         return ['date_of_birth' => 'date', 'joining_date' => 'date', 'monthly_salary' => 'decimal:2', 'daily_salary' => 'decimal:2', 'hourly_rate' => 'decimal:2', 'overtime_rate' => 'decimal:2'];
@@ -22,6 +40,16 @@ class Technician extends Model
     public function manager(): BelongsTo
     {
         return $this->belongsTo(self::class, 'reporting_manager_id');
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function reportingUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reporting_user_id');
     }
 
     public function reports(): HasMany

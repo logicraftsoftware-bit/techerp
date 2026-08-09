@@ -55,7 +55,8 @@ class MasterDataTest extends TestCase
         $this->post(route('machines.store'), ['machine_name' => 'Press', 'brand_id' => $brand->id, 'model' => 'P100', 'service_period' => '6_months', 'buying_price' => 10000, 'selling_price' => 12000, 'total_stock' => 5, 'location_name' => 'Main Warehouse', 'status' => 'active'])->assertRedirect(route('machines.index'));
         $this->assertMatchesRegularExpression('/^PR\d{6}$/', Machine::firstOrFail()->machine_code);
         $s = Skill::create(['name' => 'Electrical', 'category' => 'electrical', 'is_active' => true]);
-        $this->post(route('technicians.store'), ['employee_code' => 'T1', 'name' => 'Tech', 'mobile' => '8', 'joining_date' => '2026-01-01', 'employment_type' => 'full_time', 'status' => 'active', 'salary_type' => 'monthly', 'skills' => [$s->id]])->assertRedirect(route('technicians.index'));
+        $this->post(route('technicians.store'), ['name' => 'Tech', 'gender' => 'male', 'mobile' => '8', 'password' => 'password123', 'joining_date' => '2026-01-01', 'employment_type' => 'full_time', 'status' => 'active', 'salary_type' => 'monthly', 'monthly_salary' => 10000, 'skills' => [$s->id]])->assertRedirect(route('technicians.index'));
+        $this->assertMatchesRegularExpression('/^TE\d{6}$/', Technician::firstOrFail()->employee_code);
         $this->assertTrue(Technician::first()->skills->contains($s));
     }
 
