@@ -17,6 +17,58 @@
 <div><label class="form-label">Warranty Card</label><input class="form-input" type="file" name="warranty_card" accept="image/*,application/pdf"><p class="mt-1 text-xs text-slate-400">Any image format or PDF (10 MB maximum).</p></div>
 <div><label class="form-label">Service Coupon</label><input class="form-input" type="file" name="service_coupon" accept="image/*,application/pdf"><p class="mt-1 text-xs text-slate-400">Any image format or PDF (10 MB maximum).</p></div>
 </div></section>
-@if($machine->exists && $machine->documents->isNotEmpty())<section class="card mt-6 p-6"><h3 class="font-bold">Existing uploads</h3><div class="mt-4 flex flex-wrap gap-2">@foreach($machine->documents as $document)<a class="btn-secondary" target="_blank" href="{{route('machine-documents.show',$document)}}">{{$document->original_name}}</a>@endforeach</div></section>@endif
+@if($machine->exists && $machine->documents->isNotEmpty())
+<section class="card mt-6 p-6" id="existing-uploads">
+    <h3 class="font-bold">Existing uploads</h3>
+    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        @foreach($machine->documents as $document)
+            @php
+                $uploadLabel = match ($document->document_type) {
+                    'photo' => 'Machine Photo',
+                    'warranty' => 'Warranty Card',
+                    'service_coupon' => 'Service Coupon',
+                    default => str($document->document_type)->replace('_', ' ')->title(),
+                };
+            @endphp
+            <article class="relative overflow-hidden rounded-xl border border-slate-200 bg-white" data-upload-card>
+                <button type="button" class="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-lg leading-none text-white shadow hover:bg-red-700" aria-label="Delete {{ $document->original_name }}" title="Delete upload" data-delete-upload="{{ route('machine-documents.destroy', $document) }}">&times;</button>
+                <a href="{{ route('machine-documents.show', $document) }}" target="_blank" class="block">
+                    @if(str_starts_with($document->mime_type ?? '', 'image/'))
+                        <img src="{{ route('machine-documents.show', $document) }}" alt="{{ $uploadLabel }}" class="h-40 w-full bg-slate-100 object-cover" loading="lazy">
+                    @else
+                        <div class="flex h-40 items-center justify-center bg-slate-100 text-sm font-semibold text-slate-500">Open document</div>
+                    @endif
+                </a>
+                <div class="p-3">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-blue-600">{{ $uploadLabel }}</p>
+                    <p class="mt-1 truncate text-sm text-slate-700" title="{{ $document->original_name }}">{{ $document->original_name }}</p>
+                </div>
+            </article>
+        @endforeach
+    </div>
+</section>
+<script>
+document.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-delete-upload]');
+    if (!button || !confirm('Delete this uploaded file?')) return;
+
+    button.disabled = true;
+    try {
+        const response = await fetch(button.dataset.deleteUpload, {
+            method: 'DELETE',
+            headers: {
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            },
+        });
+        if (!response.ok) throw new Error('Delete failed');
+        button.closest('[data-upload-card]').remove();
+    } catch (error) {
+        button.disabled = false;
+        alert('Could not delete this upload. Please try again.');
+    }
+});
+</script>
+@endif
 <div class="mt-6 flex justify-end gap-3"><a href="{{route('machines.index')}}" class="btn-secondary">Cancel</a><button class="btn-primary">Save Machine</button></div></form>
 @endsection

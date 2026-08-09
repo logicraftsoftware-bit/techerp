@@ -6,6 +6,7 @@ use App\Http\Requests\MachineRequest;
 use App\Models\Brand;
 use App\Models\Machine;
 use App\Models\MachineDocument;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -50,6 +51,18 @@ class MachineController extends Controller
             ['Content-Type' => $document->mime_type ?: 'application/octet-stream'],
             'inline'
         );
+    }
+
+    public function destroyDocument(Request $request, MachineDocument $document): JsonResponse|RedirectResponse
+    {
+        Storage::disk('public')->delete($document->file_path);
+        $document->delete();
+
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Upload deleted.']);
+        }
+
+        return back()->with('success', 'Upload deleted.');
     }
 
     public function edit(Machine $machine): View

@@ -85,5 +85,11 @@ class MasterDataTest extends TestCase
         $this->get(route('machine-documents.show', $document))
             ->assertOk()
             ->assertHeader('content-type', 'image/webp');
+
+        $this->deleteJson(route('machine-documents.destroy', $document))
+            ->assertOk()
+            ->assertJson(['message' => 'Upload deleted.']);
+        Storage::disk('public')->assertMissing('machines/photo.webp');
+        $this->assertDatabaseMissing('machine_documents', ['id' => $document->id]);
     }
 }
