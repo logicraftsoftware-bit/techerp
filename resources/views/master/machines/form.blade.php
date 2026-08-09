@@ -9,7 +9,7 @@
 @include('master._field',['model'=>$machine,'name'=>'model','label'=>'Model Name','required'=>true])
 @include('master._field',['model'=>$machine,'name'=>'serial_number','label'=>'Serial Number']) @include('master._field',['model'=>$machine,'name'=>'asset_number','label'=>'Asset Number'])
 @include('master._field',['model'=>$machine,'name'=>'manufacturing_date','label'=>'Mfg Date','type'=>'date'])
-@include('master._field',['model'=>$machine,'name'=>'service_period','label'=>'Service Period','type'=>'select','required'=>true,'options'=>['4_months'=>'4 Months','6_months'=>'6 Months','1_year'=>'1 Year','2_years'=>'2 Years']])
+@include('master._field',['model'=>$machine,'name'=>'service_period','label'=>'Free Service Period','type'=>'select','required'=>true,'options'=>['4_months'=>'4 Months','6_months'=>'6 Months','1_year'=>'1 Year','2_years'=>'2 Years']])
 @include('master._field',['model'=>$machine,'name'=>'buying_price','label'=>'Buying Price','type'=>'number','required'=>true]) @include('master._field',['model'=>$machine,'name'=>'selling_price','label'=>'Selling Price','type'=>'number','required'=>true])
 @include('master._field',['model'=>$machine,'name'=>'total_stock','label'=>'Total Stock','type'=>'number','required'=>true]) @include('master._field',['model'=>$machine,'name'=>'location_name','label'=>'Machine Location (Location Name)','required'=>true])
 @include('master._field',['model'=>$machine,'name'=>'status','label'=>'Status','type'=>'select','required'=>true,'options'=>['active'=>'Active','inactive'=>'Inactive']])
