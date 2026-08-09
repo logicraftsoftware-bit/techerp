@@ -10,15 +10,15 @@
         .brand-bar { height: 7mm; background: #ed1c24; }
         .logo-wrap { margin: -4mm auto 0; width: 36mm; height: 12mm; padding: 1.2mm; border-radius: 2mm; background: #fff; }
         .logo { width: 100%; height: 100%; object-fit: contain; }
-        .photo, .initials { display: block; margin: 3mm auto 2.5mm; width: 28mm; height: 28mm; border: 1.2mm solid #ed1c24; border-radius: 50%; object-fit: cover; }
-        .initials { line-height: 28mm; background: #fce8e9; color: #ed1c24; font-size: 10mm; font-weight: bold; }
-        .name { margin: 0 3mm; font-size: 5mm; line-height: 6mm; font-weight: bold; color: #252525; }
-        .designation { margin-top: 1mm; color: #ed1c24; font-size: 2.8mm; font-weight: bold; text-transform: uppercase; }
-        .department { margin-top: .8mm; color: #666; font-size: 2.5mm; }
-        .bottom { position: absolute; left: 3mm; right: 3mm; bottom: 0; height: 22mm; padding-top: 5mm; border-radius: 12mm 12mm 0 0; background: #ed1c24; color: #fff; }
+        .photo, .initials { display: block; margin: 2mm auto 1.5mm; width: 24mm; height: 24mm; border: 1mm solid #ed1c24; border-radius: 50%; object-fit: cover; }
+        .initials { line-height: 24mm; background: #fce8e9; color: #ed1c24; font-size: 9mm; font-weight: bold; }
+        .name { margin: 0 3mm; height: 9.5mm; overflow: hidden; font-size: 4mm; line-height: 4.7mm; font-weight: bold; color: #252525; }
+        .designation { margin-top: .5mm; color: #ed1c24; font-size: 2.4mm; line-height: 3mm; font-weight: bold; text-transform: uppercase; }
+        .department { margin-top: .4mm; color: #666; font-size: 2.2mm; line-height: 2.8mm; }
+        .bottom { position: absolute; left: 3mm; right: 3mm; bottom: 0; height: 20mm; padding-top: 4mm; border-radius: 11mm 11mm 0 0; background: #ed1c24; color: #fff; }
         .employee-id { font-size: 3.2mm; font-weight: bold; }
-        .validity { margin-top: 2mm; font-size: 2.5mm; }
-        .mobile { margin-top: 2mm; padding-top: 2mm; border-top: .2mm solid rgba(255,255,255,.45); font-size: 2.5mm; }
+        .validity { margin-top: 1.4mm; font-size: 2.4mm; }
+        .mobile { margin-top: 1.4mm; padding-top: 1.4mm; border-top: .2mm solid rgba(255,255,255,.45); font-size: 2.4mm; }
     </style>
 </head>
 <body>
