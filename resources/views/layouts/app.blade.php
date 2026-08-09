@@ -11,7 +11,7 @@
     <div x-show="sidebar" x-transition.opacity class="fixed inset-0 z-40 bg-slate-950/50 lg:hidden" @click="sidebar=false"></div>
     <aside :class="sidebar ? 'translate-x-0' : '-translate-x-full'" class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-950 text-slate-300 transition-transform lg:translate-x-0">
         <div class="flex h-20 items-center gap-3 border-b border-white/10 px-6">
-            <div class="grid size-11 place-items-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 text-xl font-black text-white shadow-lg shadow-blue-900/40">FS</div>
+            <img src="{{ asset('images/fieldservice-logo.png') }}" alt="FieldService logo" class="rounded-lg object-contain" style="width: 104px; height: 44px;">
             <div><p class="font-bold tracking-wide text-white">FieldService</p><p class="text-xs text-slate-500">Operations CRM</p></div>
         </div>
         <nav class="h-[calc(100vh-5rem)] overflow-y-auto px-4 py-6 text-sm">
