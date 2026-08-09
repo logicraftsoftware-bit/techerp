@@ -30,4 +30,12 @@ class DashboardTest extends TestCase
                 ->assertSee($module[1]);
         }
     }
+
+    public function test_active_resource_keeps_parent_sidebar_group_open(): void
+    {
+        $this->actingAs(User::factory()->create())
+            ->get(route('machines.index'))
+            ->assertOk()
+            ->assertSee('x-data="{ open: true }"', false);
+    }
 }

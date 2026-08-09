@@ -19,13 +19,20 @@
             <div class="space-y-1">
                 <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'nav-link-active' : '' }}"><span class="size-2 rounded-full {{ request()->routeIs('dashboard') ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><span>Dashboard</span></a>
                 @foreach(config('crm.navigation') as $group => $items)
-                    @php $groupOpen = collect($items)->contains(fn($item) => request()->routeIs('modules.show') && request()->route('module') === $item[0]); @endphp
+                    @php
+                        $resources = ['customers', 'brands', 'departments', 'machines', 'technicians', 'skills'];
+                        $groupOpen = collect($items)->contains(function ($item) use ($resources) {
+                            return in_array($item[0], $resources)
+                                ? request()->routeIs($item[0].'.*')
+                                : request()->routeIs('modules.show') && request()->route('module') === $item[0];
+                        });
+                    @endphp
                     <div x-data="{ open: {{ $groupOpen ? 'true' : 'false' }} }" class="pt-2">
                         <button type="button" @click="open=!open" class="flex w-full items-center px-3 py-2 text-[10px] font-semibold uppercase tracking-[.16em] text-slate-600 hover:text-slate-400"><span>{{ $group }}</span><span class="ml-auto transition" :class="open && 'rotate-90'">›</span></button>
                         <div x-show="open" class="space-y-1">
                             @foreach($items as [$slug, $label, $description])
-                                @php $resource = ['customers','brands','departments','machines','technicians','skills']; $active = in_array($slug,$resource) ? request()->routeIs($slug.'.*') : (request()->routeIs('modules.show') && request()->route('module') === $slug); @endphp
-                                <a href="{{ in_array($slug,$resource) ? route($slug.'.index') : route('modules.show', $slug) }}" class="nav-link {{ $active ? 'nav-link-active' : '' }}" title="{{ $description }}"><span class="size-2 rounded-full {{ $active ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><span>{{ $label }}</span></a>
+                                @php $active = in_array($slug, $resources) ? request()->routeIs($slug.'.*') : (request()->routeIs('modules.show') && request()->route('module') === $slug); @endphp
+                                <a href="{{ in_array($slug, $resources) ? route($slug.'.index') : route('modules.show', $slug) }}" class="nav-link {{ $active ? 'nav-link-active' : '' }}" title="{{ $description }}"><span class="size-2 rounded-full {{ $active ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><span>{{ $label }}</span></a>
                             @endforeach
                         </div>
                     </div>
