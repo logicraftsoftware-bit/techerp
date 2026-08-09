@@ -82,6 +82,11 @@ class MasterDataTest extends TestCase
         $machine = Machine::create(['machine_name' => 'Press', 'machine_code' => 'PR123456', 'model' => 'P1', 'service_period' => '4_months', 'buying_price' => 1, 'selling_price' => 2, 'total_stock' => 1, 'location_name' => 'Store', 'status' => 'active']);
         $document = $machine->documents()->create(['document_type' => 'photo', 'title' => 'Photo', 'file_path' => 'machines/photo.webp', 'original_name' => 'photo.webp', 'mime_type' => 'image/webp', 'file_size' => 13]);
 
+        $this->get(route('machines.show', $machine))
+            ->assertOk()
+            ->assertSee('Machine Photo')
+            ->assertSee(route('machine-documents.show', $document));
+
         $this->get(route('machine-documents.show', $document))
             ->assertOk()
             ->assertHeader('content-type', 'image/webp');
