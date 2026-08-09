@@ -20,7 +20,7 @@
 @if($machine->exists && $machine->documents->isNotEmpty())
 <section class="card mt-6 p-6" id="existing-uploads">
     <h3 class="font-bold">Existing uploads</h3>
-    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="mt-4 flex flex-wrap gap-3">
         @foreach($machine->documents as $document)
             @php
                 $uploadLabel = match ($document->document_type) {
@@ -30,18 +30,18 @@
                     default => str($document->document_type)->replace('_', ' ')->title(),
                 };
             @endphp
-            <article class="relative overflow-hidden rounded-xl border border-slate-200 bg-white" data-upload-card>
-                <button type="button" class="absolute right-2 top-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-red-600 text-lg leading-none text-white shadow hover:bg-red-700" aria-label="Delete {{ $document->original_name }}" title="Delete upload" data-delete-upload="{{ route('machine-documents.destroy', $document) }}">&times;</button>
+            <article class="relative overflow-hidden rounded-xl border border-slate-200 bg-white" style="width: 170px;" data-upload-card>
+                <button type="button" class="absolute right-2 top-2 z-10 flex items-center justify-center rounded-full bg-red-600 text-lg leading-none text-white shadow hover:bg-red-700" style="width: 24px; height: 24px;" aria-label="Delete {{ $document->original_name }}" title="Delete upload" data-delete-upload="{{ route('machine-documents.destroy', $document) }}">&times;</button>
                 <a href="{{ route('machine-documents.show', $document) }}" target="_blank" class="block">
                     @if(str_starts_with($document->mime_type ?? '', 'image/'))
-                        <img src="{{ route('machine-documents.show', $document) }}" alt="{{ $uploadLabel }}" class="h-40 w-full bg-slate-100 object-cover" loading="lazy">
+                        <img src="{{ route('machine-documents.show', $document) }}" alt="{{ $uploadLabel }}" class="w-full bg-slate-100 object-cover" style="height: 105px;" loading="lazy">
                     @else
-                        <div class="flex h-40 items-center justify-center bg-slate-100 text-sm font-semibold text-slate-500">Open document</div>
+                        <div class="flex items-center justify-center bg-slate-100 text-xs font-semibold text-slate-500" style="height: 105px;">Open document</div>
                     @endif
                 </a>
-                <div class="p-3">
+                <div class="p-2">
                     <p class="text-xs font-semibold uppercase tracking-wide text-blue-600">{{ $uploadLabel }}</p>
-                    <p class="mt-1 truncate text-sm text-slate-700" title="{{ $document->original_name }}">{{ $document->original_name }}</p>
+                    <p class="mt-1 truncate text-xs text-slate-700" title="{{ $document->original_name }}">{{ $document->original_name }}</p>
                 </div>
             </article>
         @endforeach

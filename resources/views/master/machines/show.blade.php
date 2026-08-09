@@ -32,7 +32,7 @@
 
 <section class="card mt-6 p-6">
     <h3 class="font-bold">Photos & Documents</h3>
-    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div class="mt-4 flex flex-wrap gap-3">
         @forelse($machine->documents as $document)
             @php
                 $uploadLabel = match ($document->document_type) {
@@ -42,15 +42,15 @@
                     default => str($document->document_type)->replace('_', ' ')->title(),
                 };
             @endphp
-            <a href="{{ route('machine-documents.show', $document) }}" target="_blank" class="group overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-blue-300 hover:shadow-md">
+            <a href="{{ route('machine-documents.show', $document) }}" target="_blank" class="group overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-blue-300 hover:shadow-md" style="width: 170px;">
                 @if(str_starts_with($document->mime_type ?? '', 'image/'))
-                    <img src="{{ route('machine-documents.show', $document) }}" alt="{{ $uploadLabel }}" class="h-44 w-full bg-slate-100 object-cover transition group-hover:scale-[1.02]" loading="lazy">
+                    <img src="{{ route('machine-documents.show', $document) }}" alt="{{ $uploadLabel }}" class="w-full bg-slate-100 object-cover transition group-hover:scale-[1.02]" style="height: 105px;" loading="lazy">
                 @else
-                    <div class="flex h-44 items-center justify-center bg-slate-100 text-sm font-semibold text-slate-500">Open document</div>
+                    <div class="flex items-center justify-center bg-slate-100 text-xs font-semibold text-slate-500" style="height: 105px;">Open document</div>
                 @endif
-                <div class="p-3">
-                    <span class="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">{{ $uploadLabel }}</span>
-                    <p class="mt-2 truncate text-sm text-slate-700" title="{{ $document->original_name }}">{{ $document->original_name }}</p>
+                <div class="p-2">
+                    <span class="inline-flex rounded-full bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">{{ $uploadLabel }}</span>
+                    <p class="mt-1 truncate text-xs text-slate-700" title="{{ $document->original_name }}">{{ $document->original_name }}</p>
                 </div>
             </a>
         @empty
