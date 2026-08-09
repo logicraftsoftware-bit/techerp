@@ -26,9 +26,10 @@ class MasterDataTest extends TestCase
 
     public function test_customer_contact_crud(): void
     {
-        $data = ['customer_code' => 'CUS-001', 'customer_type' => 'company', 'customer_name' => 'Acme', 'mobile' => '9999999999', 'address' => 'Street', 'city' => 'Mumbai', 'state' => 'Maharashtra', 'pin_code' => '400001', 'status' => 'active', 'contacts' => [['name' => 'Jane', 'mobile' => '8888888888']]];
+        $data = ['entry_type' => 'crm', 'refer_type' => 'self', 'customer_type' => 'company', 'customer_name' => 'Acme', 'mobile' => '9999999999', 'address' => 'Street', 'city' => 'Mumbai', 'state' => 'Maharashtra', 'pin_code' => '400001', 'status' => 'active', 'contacts' => [['name' => 'Jane', 'mobile' => '8888888888']]];
         $this->post(route('customers.store'), $data)->assertRedirect(route('customers.index'));
         $c = Customer::first();
+        $this->assertMatchesRegularExpression('/^AC\d{6}$/', $c->customer_code);
         $this->assertCount(1, $c->contacts);
         $this->delete(route('customers.destroy', $c))->assertRedirect();
         $this->assertSoftDeleted($c);

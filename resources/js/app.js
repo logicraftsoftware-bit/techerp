@@ -6,7 +6,7 @@ import 'datatables.net-dt/css/dataTables.dataTables.css';
 window.Alpine = Alpine;
 Alpine.start();
 
-document.querySelectorAll('table.w-full').forEach((table) => new DataTable(table, {
+document.querySelectorAll('table[data-datatable]').forEach((table) => new DataTable(table, {
     paging: false,
     searching: false,
     info: false,
