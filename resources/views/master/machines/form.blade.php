@@ -50,7 +50,9 @@
 <script>
 document.addEventListener('click', async (event) => {
     const button = event.target.closest('[data-delete-upload]');
-    if (!button || !confirm('Delete this uploaded file?')) return;
+    if (!button) return;
+    const confirmation = await window.Swal.fire({ icon: 'warning', title: 'Delete upload?', text: 'This uploaded file will be deleted permanently.', showCancelButton: true, confirmButtonText: 'Yes, delete', cancelButtonText: 'Cancel', confirmButtonColor: '#dc2626', reverseButtons: true });
+    if (!confirmation.isConfirmed) return;
 
     button.disabled = true;
     try {
@@ -63,9 +65,10 @@ document.addEventListener('click', async (event) => {
         });
         if (!response.ok) throw new Error('Delete failed');
         button.closest('[data-upload-card]').remove();
+        window.Swal.fire({ icon: 'success', title: 'Deleted', text: 'Upload deleted successfully.', timer: 1600, showConfirmButton: false });
     } catch (error) {
         button.disabled = false;
-        alert('Could not delete this upload. Please try again.');
+        window.Swal.fire({ icon: 'error', title: 'Delete failed', text: 'Could not delete this upload. Please try again.' });
     }
 });
 </script>

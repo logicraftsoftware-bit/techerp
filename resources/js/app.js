@@ -1,10 +1,44 @@
 import Alpine from 'alpinejs';
 import Chart from 'chart.js/auto';
 import DataTable from 'datatables.net-dt';
+import Swal from 'sweetalert2';
 import 'datatables.net-dt/css/dataTables.dataTables.css';
 
 window.Alpine = Alpine;
+window.Swal = Swal;
 Alpine.start();
+
+const flashSuccess = document.querySelector('[data-flash-success]')?.dataset.flashSuccess;
+if (flashSuccess) {
+    Swal.fire({ icon: 'success', title: 'Success', text: flashSuccess, timer: 1800, timerProgressBar: true, showConfirmButton: false });
+}
+
+document.addEventListener('submit', async (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || form.dataset.sweetAlertConfirmed === 'true') return;
+
+    const method = form.querySelector('input[name="_method"]')?.value?.toUpperCase();
+    const isLogout = form.action.includes('/logout');
+    if (method !== 'DELETE' && !isLogout) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    const result = await Swal.fire({
+        icon: 'warning',
+        title: isLogout ? 'Logout?' : 'Are you sure?',
+        text: isLogout ? 'Do you want to end your current session?' : 'This record will be deleted permanently.',
+        showCancelButton: true,
+        confirmButtonText: isLogout ? 'Yes, logout' : 'Yes, delete',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: isLogout ? '#2563eb' : '#dc2626',
+        reverseButtons: true,
+    });
+
+    if (result.isConfirmed) {
+        form.dataset.sweetAlertConfirmed = 'true';
+        form.submit();
+    }
+}, true);
 
 document.querySelectorAll('table[data-datatable]').forEach((table) => new DataTable(table, {
     paging: false,
@@ -29,7 +63,9 @@ window.renderDashboardCharts = (data) => {
 
 document.addEventListener('click', async (event) => {
     const button = event.target.closest('[data-toggle-user]');
-    if (!button || !confirm('Change this user account status?')) return;
+    if (!button) return;
+    const confirmation = await Swal.fire({ icon: 'question', title: 'Change user status?', showCancelButton: true, confirmButtonText: 'Yes, change it', confirmButtonColor: '#2563eb' });
+    if (!confirmation.isConfirmed) return;
     button.disabled = true;
     try {
         const response = await fetch(button.dataset.toggleUser, { method: 'PATCH', headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content } });
@@ -37,5 +73,5 @@ document.addEventListener('click', async (event) => {
         if (!response.ok) throw new Error(data.message || 'Unable to update status.');
         button.textContent = data.is_active ? 'Active' : 'Inactive';
         button.className = `badge ${data.is_active ? 'badge-success' : 'badge-danger'}`;
-    } catch (error) { alert(error.message); } finally { button.disabled = false; }
+    } catch (error) { Swal.fire({ icon: 'error', title: 'Unable to update', text: error.message }); } finally { button.disabled = false; }
 });

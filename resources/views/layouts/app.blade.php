@@ -53,7 +53,7 @@
             </div>
         </header>
         <main class="p-4 md:p-8">
-            @if(session('success'))<div x-data="{show:true}" x-show="show" x-transition class="mb-5 flex items-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"><span>{{ session('success') }}</span><button class="ml-auto" @click="show=false">×</button></div>@endif
+            @if(session('success'))<div data-flash-success="{{ session('success') }}" hidden></div>@endif
             @if($errors->any())<div class="mb-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{{ $errors->first() }}</div>@endif
             {{ $slot ?? '' }}@yield('content')
         </main>
