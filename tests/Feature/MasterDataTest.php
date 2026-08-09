@@ -69,8 +69,7 @@ class MasterDataTest extends TestCase
 
     public function test_machine_index_renders_with_records(): void
     {
-        $this->actingAs($this->superAdmin())
-            ->get(route('machines.index'))
+        $this->get(route('machines.index'))
             ->assertOk()
             ->assertSee('Free Service');
     }
