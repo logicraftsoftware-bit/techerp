@@ -30,9 +30,9 @@ class MachineRequest extends FormRequest
             'location_name' => ['required', 'string', 'max:190'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
             'machine_photos' => ['nullable', 'array', 'max:10'],
-            'machine_photos.*' => ['image', 'max:5120'],
-            'warranty_card' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,pdf'],
-            'service_coupon' => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,pdf'],
+            'machine_photos.*' => ['file', 'mimetypes:image/*', 'max:5120'],
+            'warranty_card' => ['nullable', 'file', 'mimetypes:image/*,application/pdf', 'max:10240'],
+            'service_coupon' => ['nullable', 'file', 'mimetypes:image/*,application/pdf', 'max:10240'],
         ];
     }
 }
