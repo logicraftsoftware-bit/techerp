@@ -14,18 +14,14 @@ class ServiceRequestRequest extends FormRequest
 
     public function rules(): array
     {
-        $existing = $this->input('request_type') === 'existing_service';
-
         return [
             'request_type' => ['required', Rule::in(['new_installation', 'existing_service'])],
             'service_type' => ['required', Rule::in(['installation', 'amc', 'free_service', 'paid_service'])],
             'customer_id' => ['required', 'exists:customers,id'],
-            'machine_id' => [$existing ? 'required' : 'nullable', 'exists:machines,id'],
-            'machine_category_id' => [$existing ? 'nullable' : 'required', 'exists:machine_categories,id'],
-            'brand_id' => [$existing ? 'nullable' : 'required', 'exists:brands,id'],
-            'product_name' => [$existing ? 'nullable' : 'required', 'string', 'max:150'],
-            'model' => ['nullable', 'string', 'max:100'],
-            'serial_number' => ['nullable', 'string', 'max:100'],
+            'contact_phone' => ['required', 'string', 'max:20'],
+            'machine_id' => ['required', 'exists:machines,id'],
+            'amc_plan_ids' => ['nullable', 'array'],
+            'amc_plan_ids.*' => ['integer', 'distinct', 'exists:amc_plans,id'],
             'subject' => ['required', 'string', 'max:190'],
             'complaint' => ['nullable', 'string'],
             'priority' => ['required', Rule::in(['low', 'normal', 'high', 'urgent'])],

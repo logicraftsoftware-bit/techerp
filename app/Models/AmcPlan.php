@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class AmcPlan extends Model
 {
@@ -51,5 +52,10 @@ class AmcPlan extends Model
     public function brandMaster(): BelongsTo
     {
         return $this->belongsTo(Brand::class, 'brand_id');
+    }
+
+    public function serviceRequests(): BelongsToMany
+    {
+        return $this->belongsToMany(ServiceRequest::class)->withTimestamps();
     }
 }

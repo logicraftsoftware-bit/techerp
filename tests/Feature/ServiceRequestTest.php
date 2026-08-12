@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AmcPlan;
 use App\Models\Brand;
 use App\Models\Customer;
 use App\Models\Machine;
@@ -31,18 +32,20 @@ class ServiceRequestTest extends TestCase
         $customer = $this->customer('Acme');
         $category = MachineCategory::create(['category_name' => 'Chimney']);
         $brand = Brand::create(['brand_name' => 'Kutchina']);
+        $machine = Machine::create(['machine_name' => 'Kutchina Chimney', 'machine_code' => 'KC123456', 'machine_category_id' => $category->id, 'brand_id' => $brand->id, 'model' => 'KC-100', 'serial_number' => 'SER-100', 'status' => 'active']);
+        $plan = AmcPlan::create(['plan_name' => 'Gold Plan', 'machine_category_id' => $category->id, 'brand_id' => $brand->id, 'plan_type' => 'comprehensive', 'duration' => '1_year', 'parts_included' => true, 'price' => 5000, 'tax_percent' => 18, 'status' => 'active']);
         $data = $this->baseData($customer) + [
             'request_type' => 'new_installation',
             'service_type' => 'installation',
-            'machine_category_id' => $category->id,
-            'brand_id' => $brand->id,
-            'product_name' => 'Kutchina Chimney',
-            'model' => 'KC-100',
+            'machine_id' => $machine->id,
+            'amc_plan_ids' => [$plan->id],
         ];
 
         $this->post(route('service-requests.store'), $data)->assertRedirect(route('service-requests.index'));
         $request = ServiceRequest::firstOrFail();
         $this->assertMatchesRegularExpression('/^SR-\d{6}-\d{4}$/', $request->request_code);
+        $this->assertSame('Kutchina Chimney', $request->product_name);
+        $this->assertTrue($request->amcPlans->contains($plan));
         $this->get(route('service-requests.show', $request))->assertOk()->assertSee('Kutchina Chimney')->assertSee('Acme');
 
         $this->put(route('service-requests.update', $request), [...$data, 'subject' => 'Install updated'])
@@ -66,6 +69,15 @@ class ServiceRequestTest extends TestCase
             ->assertSessionHasErrors('machine_id');
     }
 
+    public function test_service_request_form_has_searchable_customer_machine_and_read_only_product_fields(): void
+    {
+        $this->get(route('service-requests.create'))->assertOk()
+            ->assertSee('Search customer by name, code or phone')
+            ->assertSee('Search machine by code, name, model or serial number')
+            ->assertSee('Product Category')
+            ->assertSee('select multiple if required');
+    }
+
     private function customer(string $name): Customer
     {
         return Customer::create(['customer_code' => strtoupper(substr($name, 0, 2)).random_int(100000, 999999), 'customer_type' => 'company', 'customer_name' => $name, 'mobile' => (string) random_int(7000000000, 9999999999), 'address' => 'Main Road', 'city' => 'Mumbai', 'state' => 'Maharashtra', 'pin_code' => '400001', 'status' => 'active']);
@@ -73,6 +85,6 @@ class ServiceRequestTest extends TestCase
 
     private function baseData(Customer $customer): array
     {
-        return ['customer_id' => $customer->id, 'subject' => 'Service needed', 'complaint' => 'Please visit', 'priority' => 'normal', 'preferred_date' => '2026-08-15', 'preferred_time' => '10:30', 'service_address' => $customer->address, 'city' => $customer->city, 'state' => $customer->state, 'pin_code' => $customer->pin_code, 'status' => 'open'];
+        return ['customer_id' => $customer->id, 'contact_phone' => $customer->mobile, 'subject' => 'Service needed', 'complaint' => 'Please visit', 'priority' => 'normal', 'preferred_date' => '2026-08-15', 'preferred_time' => '10:30', 'service_address' => $customer->address, 'city' => $customer->city, 'state' => $customer->state, 'pin_code' => $customer->pin_code, 'status' => 'open'];
     }
 }

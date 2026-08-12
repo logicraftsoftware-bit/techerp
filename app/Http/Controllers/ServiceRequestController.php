@@ -3,13 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ServiceRequestRequest;
-use App\Models\Brand;
+use App\Models\AmcPlan;
 use App\Models\Customer;
 use App\Models\Machine;
-use App\Models\MachineCategory;
 use App\Models\ServiceRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -38,14 +38,17 @@ class ServiceRequestController extends Controller
 
     public function store(ServiceRequestRequest $request): RedirectResponse
     {
-        ServiceRequest::create($this->requestData($request) + ['created_by' => $request->user()->id]);
+        DB::transaction(function () use ($request): void {
+            $serviceRequest = ServiceRequest::create($this->requestData($request) + ['created_by' => $request->user()->id]);
+            $serviceRequest->amcPlans()->sync($request->validated('amc_plan_ids', []));
+        });
 
         return to_route('service-requests.index')->with('success', 'Service request created.');
     }
 
     public function show(ServiceRequest $serviceRequest): View
     {
-        return view('service-requests.show', ['serviceRequest' => $serviceRequest->load(['customer', 'machine', 'machineCategory', 'brand', 'creator'])]);
+        return view('service-requests.show', ['serviceRequest' => $serviceRequest->load(['customer', 'machine', 'machineCategory', 'brand', 'creator', 'amcPlans'])]);
     }
 
     public function edit(ServiceRequest $serviceRequest): View
@@ -55,7 +58,10 @@ class ServiceRequestController extends Controller
 
     public function update(ServiceRequestRequest $request, ServiceRequest $serviceRequest): RedirectResponse
     {
-        $serviceRequest->update($this->requestData($request));
+        DB::transaction(function () use ($request, $serviceRequest): void {
+            $serviceRequest->update($this->requestData($request));
+            $serviceRequest->amcPlans()->sync($request->validated('amc_plan_ids', []));
+        });
 
         return to_route('service-requests.index')->with('success', 'Service request updated.');
     }
@@ -69,33 +75,34 @@ class ServiceRequestController extends Controller
 
     private function form(ServiceRequest $serviceRequest): View
     {
+        $serviceRequest->loadMissing('amcPlans');
+
         return view('service-requests.form', [
             'serviceRequest' => $serviceRequest,
             'customers' => Customer::where('status', 'active')->orderBy('customer_name')->get(),
             'machines' => Machine::with(['brandMaster', 'machineCategory'])->where('status', 'active')->orderBy('machine_name')->get(),
-            'categories' => MachineCategory::orderBy('category_name')->get(),
-            'brands' => Brand::orderBy('brand_name')->get(),
+            'amcPlans' => AmcPlan::with(['machineCategory', 'brandMaster'])->where('status', 'active')->orderBy('plan_name')->get(),
         ]);
     }
 
     private function requestData(ServiceRequestRequest $request): array
     {
-        $data = $request->validated();
+        $data = $request->safe()->except('amc_plan_ids');
+        $machine = Machine::with(['machineCategory', 'brandMaster'])->findOrFail($data['machine_id']);
 
         if ($data['request_type'] === 'existing_service') {
-            $machine = Machine::findOrFail($data['machine_id']);
             if ((int) $machine->customer_id !== (int) $data['customer_id']) {
                 throw ValidationException::withMessages(['machine_id' => 'The selected machine does not belong to this customer.']);
             }
-            $data['machine_category_id'] = null;
-            $data['brand_id'] = null;
-            $data['product_name'] = null;
-            $data['model'] = null;
-            $data['serial_number'] = null;
         } else {
             $data['service_type'] = 'installation';
-            $data['machine_id'] = null;
         }
+
+        $data['machine_category_id'] = $machine->machine_category_id;
+        $data['brand_id'] = $machine->brand_id;
+        $data['product_name'] = $machine->machine_name;
+        $data['model'] = $machine->model;
+        $data['serial_number'] = $machine->serial_number;
 
         return $data;
     }
