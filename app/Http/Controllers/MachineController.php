@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\MachineRequest;
 use App\Models\Brand;
 use App\Models\Machine;
+use App\Models\MachineCategory;
 use App\Models\MachineDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -18,7 +19,7 @@ class MachineController extends Controller
 {
     public function index(Request $r): View
     {
-        $records = Machine::with('customer')->when($r->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('machine_name', 'like', "%$s%")->orWhere('machine_code', 'like', "%$s%")->orWhere('serial_number', 'like', "%$s%")))->latest()->paginate(15)->withQueryString();
+        $records = Machine::with(['customer', 'machineCategory'])->when($r->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('machine_name', 'like', "%$s%")->orWhere('machine_code', 'like', "%$s%")->orWhere('serial_number', 'like', "%$s%")))->latest()->paginate(15)->withQueryString();
 
         return view('master.machines.index', compact('records'));
     }
@@ -38,7 +39,7 @@ class MachineController extends Controller
 
     public function show(Machine $machine): View
     {
-        return view('master.machines.show', ['machine' => $machine->load(['brandMaster', 'documents'])]);
+        return view('master.machines.show', ['machine' => $machine->load(['brandMaster', 'machineCategory', 'documents'])]);
     }
 
     public function document(MachineDocument $document): StreamedResponse
@@ -106,7 +107,7 @@ class MachineController extends Controller
 
     private function form(Machine $machine): View
     {
-        return view('master.machines.form', ['machine' => $machine, 'brands' => Brand::orderBy('brand_name')->get()]);
+        return view('master.machines.form', ['machine' => $machine, 'brands' => Brand::orderBy('brand_name')->get(), 'categories' => MachineCategory::orderBy('category_name')->get()]);
     }
 
     private function data(MachineRequest $request): array

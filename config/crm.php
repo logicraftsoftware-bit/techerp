@@ -6,6 +6,7 @@ return [
             ['customers', 'Customers', 'Customer profiles, contacts and service history'],
             ['brands', 'Brand Master', 'Machine brand names'],
             ['departments', 'Department Master', 'Department names'],
+            ['machine-categories', 'Machine Category Master', 'Machine category names'],
             ['skills', 'Technician Skills', 'Skill master, levels and certifications'],
             ['machines', 'Machines', 'Assets, documents and maintenance history'],
             ['technicians', 'Technicians', 'Staff profiles, employment and salary structure'],
@@ -34,6 +35,7 @@ return [
             ['parts-requests', 'Parts Requests', 'Request, approval and issue workflow'],
         ],
         'Maintenance' => [
+            ['amc-plans', 'AMC Plan Master', 'Plan types, duration and pricing'],
             ['amc', 'AMC Management', 'Contracts, service balance and expiry'],
             ['preventive-maintenance', 'Preventive Maintenance', 'Recurring schedules and due work'],
         ],

@@ -36,7 +36,7 @@
                         <a class="font-semibold text-blue-600" href="{{ route('machines.show', $machine) }}">{{ $machine->machine_code }}</a>
                         <div class="font-medium">{{ $machine->machine_name }}</div>
                     </td>
-                    <td class="px-4 py-4">{{ $machine->brand }}<div class="text-xs text-slate-400">{{ $machine->model }}</div></td>
+                    <td class="px-4 py-4">{{ $machine->brand }}<div class="text-xs text-slate-400">{{ $machine->model }}</div><div class="text-xs text-slate-400">{{ $machine->machineCategory?->category_name }}</div></td>
                     <td class="px-4 py-4">{{ $machine->serial_number ?: '—' }}<div class="text-xs text-slate-400">{{ $machine->asset_number ?: '—' }}</div></td>
                     <td class="px-4 py-4">{{ str($machine->service_period)->replace('_', ' ')->title() }}</td>
                     <td class="px-4 py-4">₹{{ number_format((float) $machine->selling_price, 2) }}<div class="text-xs text-slate-400">Buy: ₹{{ number_format((float) $machine->buying_price, 2) }}</div></td>

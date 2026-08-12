@@ -13,6 +13,7 @@
 <section class="card p-6">
     <div class="grid gap-5 sm:grid-cols-4">
         @foreach([
+            'Machine Category' => $machine->machineCategory?->category_name,
             'Brand' => $machine->brand,
             'Model' => $machine->model,
             'Serial Number' => $machine->serial_number,

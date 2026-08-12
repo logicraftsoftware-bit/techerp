@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\AmcPlanController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\MachineCategoryController;
 use App\Http\Controllers\MachineController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\ProfileController;
@@ -30,6 +32,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::resource('skills', SkillController::class)->except('show');
     Route::resource('brands', BrandController::class)->except('show');
     Route::resource('departments', DepartmentController::class)->except('show');
+    Route::resource('machine-categories', MachineCategoryController::class)->except('show');
+    Route::resource('amc-plans', AmcPlanController::class)->except('show');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'password'])->name('profile.password');

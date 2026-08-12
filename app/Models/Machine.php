@@ -42,6 +42,11 @@ class Machine extends Model
         return $this->belongsTo(Brand::class, 'brand_id');
     }
 
+    public function machineCategory(): BelongsTo
+    {
+        return $this->belongsTo(MachineCategory::class);
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(MachineDocument::class);

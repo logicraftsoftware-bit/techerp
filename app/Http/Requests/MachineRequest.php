@@ -19,6 +19,7 @@ class MachineRequest extends FormRequest
         return [
             'machine_name' => ['required', 'string', 'max:150'],
             'brand_id' => ['required', 'exists:brands,id'],
+            'machine_category_id' => ['required', 'exists:machine_categories,id'],
             'model' => ['required', 'string', 'max:100'],
             'serial_number' => ['nullable', 'max:100', Rule::unique('machines')->ignore($id)],
             'asset_number' => ['nullable', 'max:100', Rule::unique('machines')->ignore($id)],
