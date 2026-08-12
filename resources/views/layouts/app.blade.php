@@ -20,7 +20,7 @@
                 <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'nav-link-active' : '' }}"><span class="size-2 rounded-full {{ request()->routeIs('dashboard') ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><span>Dashboard</span></a>
                 @foreach(config('crm.navigation') as $group => $items)
                     @php
-                        $resources = ['customers', 'brands', 'departments', 'machine-categories', 'machines', 'technicians', 'skills', 'amc-plans'];
+                        $resources = ['customers', 'brands', 'departments', 'machine-categories', 'machines', 'technicians', 'skills', 'amc-plans', 'service-requests'];
                         $groupOpen = collect($items)->contains(function ($item) use ($resources) {
                             return in_array($item[0], $resources)
                                 ? request()->routeIs($item[0].'.*')

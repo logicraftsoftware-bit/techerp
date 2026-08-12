@@ -10,6 +10,7 @@ use App\Http\Controllers\MachineCategoryController;
 use App\Http\Controllers\MachineController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\UserController;
@@ -34,6 +35,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::resource('departments', DepartmentController::class)->except('show');
     Route::resource('machine-categories', MachineCategoryController::class)->except('show');
     Route::resource('amc-plans', AmcPlanController::class)->except('show');
+    Route::resource('service-requests', ServiceRequestController::class);
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
