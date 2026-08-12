@@ -9,15 +9,16 @@
 <body class="h-full text-slate-700" x-data="{ sidebar: false, profile: false }">
 <div class="min-h-full">
     <div x-show="sidebar" x-transition.opacity class="fixed inset-0 z-40 bg-slate-950/50 lg:hidden" @click="sidebar=false"></div>
-    <aside :class="sidebar ? 'translate-x-0' : '-translate-x-full'" class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-950 text-slate-300 transition-transform lg:translate-x-0">
-        <div class="flex h-20 items-center gap-3 border-b border-white/10 px-6">
-            <img src="{{ asset('images/fieldservice-logo.png') }}" alt="FieldService logo" class="rounded-lg object-contain" style="width: 104px; height: 44px;">
-            <div><p class="font-bold tracking-wide text-white">FieldService</p><p class="text-xs text-slate-500">Operations CRM</p></div>
+    <aside :class="sidebar ? 'translate-x-0' : '-translate-x-full'" class="fixed inset-y-0 left-0 z-50 w-80 overflow-hidden border-r border-cyan-400/10 bg-[#020b20] text-slate-300 shadow-2xl transition-transform lg:translate-x-0">
+        <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(37,99,235,.16),transparent_35%),radial-gradient(circle_at_100%_65%,rgba(6,182,212,.10),transparent_40%)]"></div>
+        <div class="relative flex h-28 items-center gap-4 border-b border-white/10 px-7">
+            <img src="{{ asset('images/fieldservice-logo.png') }}" alt="FieldService logo" class="rounded-xl object-contain shadow-lg" style="width: 118px; height: 54px;">
+            <div><p class="text-xl font-bold tracking-wide text-white">FieldService</p><p class="text-sm text-slate-400">Operations CRM</p></div>
         </div>
-        <nav class="h-[calc(100vh-5rem)] overflow-y-auto px-4 py-6 text-sm">
-            <p class="mb-3 px-3 text-[11px] font-semibold uppercase tracking-[.18em] text-slate-600">Workspace</p>
+        <nav class="relative h-[calc(100vh-7rem)] overflow-y-auto px-5 py-5 text-sm [scrollbar-width:thin] [scrollbar-color:rgba(34,211,238,.25)_transparent]">
+            <div class="mb-3 flex items-center justify-between px-3"><p class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-400">Workspace</p><span class="tracking-[.18em] text-cyan-400/70">•••</span></div>
             <div class="space-y-1">
-                <a href="{{ route('dashboard') }}" class="nav-link {{ request()->routeIs('dashboard') ? 'nav-link-active' : '' }}"><span class="size-2 rounded-full {{ request()->routeIs('dashboard') ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><span>Dashboard</span></a>
+                <a href="{{ route('dashboard') }}" class="nav-link mb-3 py-3.5 {{ request()->routeIs('dashboard') ? 'nav-link-active' : '' }}"><svg class="size-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="text-base">Dashboard</span></a>
                 @foreach(config('crm.navigation') as $group => $items)
                     @php
                         $resources = ['customers', 'brands', 'departments', 'machine-categories', 'machines', 'technicians', 'skills', 'amc-plans', 'service-requests'];
@@ -27,21 +28,25 @@
                                 : request()->routeIs('modules.show') && request()->route('module') === $item[0];
                         });
                     @endphp
-                    <div x-data="{ open: {{ $groupOpen ? 'true' : 'false' }} }" class="pt-2">
-                        <button type="button" @click="open=!open" class="flex w-full items-center px-3 py-2 text-[10px] font-semibold uppercase tracking-[.16em] text-slate-600 hover:text-slate-400"><span>{{ $group }}</span><span class="ml-auto transition" :class="open && 'rotate-90'">›</span></button>
-                        <div x-show="open" class="space-y-1">
+                    @php
+                        $groupColors = ['Master Data' => 'text-violet-400', 'Parts & Inventory' => 'text-sky-400', 'Service Operations' => 'text-cyan-400', 'Maintenance' => 'text-amber-400', 'Workforce' => 'text-rose-400', 'Insights & Control' => 'text-purple-400'];
+                        $groupColor = $groupColors[$group] ?? 'text-cyan-400';
+                    @endphp
+                    <div x-data="{ open: {{ $groupOpen ? 'true' : 'false' }} }" class="sidebar-group">
+                        <button type="button" @click="open=!open" class="sidebar-group-button"><svg class="size-6 {{ $groupColor }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4M5 5l3 3m8 8 3 3M19 5l-3 3M8 16l-3 3"/></svg><span>{{ $group }}</span><svg class="ml-auto size-4 transition" :class="open && 'rotate-90'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button>
+                        <div x-cloak x-show="open" x-transition class="sidebar-group-panel">
                             @foreach($items as [$slug, $label, $description])
                                 @php $active = in_array($slug, $resources) ? request()->routeIs($slug.'.*') : (request()->routeIs('modules.show') && request()->route('module') === $slug); @endphp
-                                <a href="{{ in_array($slug, $resources) ? route($slug.'.index') : route('modules.show', $slug) }}" class="nav-link {{ $active ? 'nav-link-active' : '' }}" title="{{ $description }}"><span class="size-2 rounded-full {{ $active ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><span>{{ $label }}</span></a>
+                                <a href="{{ in_array($slug, $resources) ? route($slug.'.index') : route('modules.show', $slug) }}" class="nav-link {{ $active ? 'nav-link-active' : '' }}" title="{{ $description }}"><span class="size-1.5 rounded-full {{ $active ? 'bg-cyan-400 shadow-[0_0_8px_#22d3ee]' : 'bg-slate-700' }}"></span><span>{{ $label }}</span></a>
                             @endforeach
                         </div>
                     </div>
                 @endforeach
-                <div class="pt-2"><p class="px-3 py-2 text-[10px] font-semibold uppercase tracking-[.16em] text-slate-600">Administration</p><a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'nav-link-active' : '' }}"><span class="size-2 rounded-full {{ request()->routeIs('users.*') ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><span>Users</span></a></div>
+                <div x-data="{ open: {{ request()->routeIs('users.*') ? 'true' : 'false' }} }" class="sidebar-group border-b-0"><button type="button" @click="open=!open" class="sidebar-group-button"><svg class="size-6 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg><span>Administration</span><svg class="ml-auto size-4 transition" :class="open && 'rotate-90'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button><div x-cloak x-show="open" x-transition class="sidebar-group-panel"><a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'nav-link-active' : '' }}"><span class="size-1.5 rounded-full {{ request()->routeIs('users.*') ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><svg class="size-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Users</span></a></div></div>
             </div>
         </nav>
     </aside>
-    <div class="lg:pl-72">
+    <div class="lg:pl-80">
         <header class="sticky top-0 z-30 flex h-20 items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur md:px-8">
             <button class="mr-4 rounded-xl p-2 hover:bg-slate-100 lg:hidden" @click="sidebar=true" aria-label="Open navigation">☰</button>
             <div><h1 class="text-lg font-bold text-slate-900">{{ $title ?? 'Dashboard' }}</h1><p class="hidden text-xs text-slate-400 sm:block">{{ now()->format('l, d F Y') }}</p></div>

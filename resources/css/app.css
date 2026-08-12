@@ -14,8 +14,11 @@
 [x-cloak] { display: none !important; }
 @layer components {
     .card { @apply rounded-2xl border border-slate-200/80 bg-white shadow-sm; }
-    .nav-link { @apply flex items-center gap-3 rounded-xl px-3 py-2.5 font-medium text-slate-400 transition hover:bg-white/5 hover:text-white; }
-    .nav-link-active { @apply bg-blue-600/15 text-cyan-300 ring-1 ring-blue-500/20; }
+    .nav-link { @apply flex items-center gap-3 rounded-xl px-3 py-2.5 font-medium text-slate-300 transition hover:bg-white/5 hover:text-white; }
+    .nav-link-active { @apply bg-gradient-to-r from-blue-600/35 to-cyan-500/15 text-white ring-1 ring-cyan-400/25 shadow-lg; }
+    .sidebar-group { @apply border-b border-white/8 py-2; }
+    .sidebar-group-button { @apply flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-xs font-semibold uppercase tracking-[.12em] text-slate-400 transition hover:bg-white/5 hover:text-white; }
+    .sidebar-group-panel { @apply mt-1 space-y-1 rounded-2xl border border-cyan-400/20 bg-slate-950/35 p-2 shadow-inner; }
     .dropdown-link { @apply block rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-50; }
     .form-label { @apply mb-1.5 block text-sm font-semibold text-slate-700; }
     .form-input { @apply w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-3 focus:ring-blue-100; }
