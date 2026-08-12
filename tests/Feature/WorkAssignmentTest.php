@@ -40,6 +40,12 @@ class WorkAssignmentTest extends TestCase
         $this->post(route('assignments.store'), [...$data, 'start_time' => '11:00', 'end_time' => '13:00'])->assertSessionHasErrors('technician_id');
         $this->put(route('assignments.update', $assignment), [...$data, 'status' => 'accepted'])->assertRedirect(route('assignments.index'));
         $this->assertDatabaseHas('work_assignments', ['id' => $assignment->id, 'status' => 'accepted']);
+        $this->assertDatabaseHas('work_status_histories', ['work_assignment_id' => $assignment->id, 'to_status' => 'accepted']);
+        $this->get(route('job-cards.index', ['month' => '2026-08']))->assertOk()->assertSee($assignment->assignment_code)->assertSee('1 work');
+        $this->get(route('work-status.show', $assignment))->assertOk()->assertSee('Work Status Timeline')->assertSee('Accepted');
+        $this->get(route('service-reports.show', $request))->assertOk()->assertSee('Lifecycle Timeline')->assertSee($assignment->assignment_code);
+        $this->patch(route('work-status.update', $assignment), ['status' => 'completed', 'remarks' => 'Work finished'])->assertRedirect();
+        $this->assertDatabaseHas('service_requests', ['id' => $request->id, 'status' => 'completed']);
         $this->delete(route('assignments.destroy', $assignment))->assertRedirect();
         $this->assertDatabaseMissing('work_assignments', ['id' => $assignment->id]);
     }

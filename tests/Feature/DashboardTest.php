@@ -59,7 +59,6 @@ class DashboardTest extends TestCase
             'job-cards',
             'work-status',
             'service-reports',
-            'service-history',
         ], array_column(config('crm.navigation.Service Operations'), 0));
     }
 }

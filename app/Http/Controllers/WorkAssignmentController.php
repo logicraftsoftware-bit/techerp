@@ -30,7 +30,8 @@ class WorkAssignmentController extends Controller
 
     public function store(WorkAssignmentRequest $request): RedirectResponse
     {
-        WorkAssignment::create($request->validated() + ['assigned_by' => $request->user()->id]);
+        $assignment = WorkAssignment::create($request->validated() + ['assigned_by' => $request->user()->id]);
+        $assignment->statusHistories()->create(['to_status' => $assignment->status, 'remarks' => 'Work assignment created.', 'changed_by' => $request->user()->id]);
 
         return to_route('assignments.index')->with('success', 'Work assigned successfully.');
     }
@@ -47,7 +48,11 @@ class WorkAssignmentController extends Controller
 
     public function update(WorkAssignmentRequest $request, WorkAssignment $assignment): RedirectResponse
     {
+        $oldStatus = $assignment->status;
         $assignment->update($request->validated());
+        if ($oldStatus !== $assignment->status) {
+            $assignment->statusHistories()->create(['from_status' => $oldStatus, 'to_status' => $assignment->status, 'remarks' => 'Status changed while editing assignment.', 'changed_by' => $request->user()->id]);
+        }
 
         return to_route('assignments.index')->with('success', 'Work assignment updated.');
     }

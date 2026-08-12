@@ -26,7 +26,6 @@ return [
             ['job-cards', 'Job Cards', 'Scheduling and field service execution'],
             ['work-status', 'Work Status', 'Live status timeline and history'],
             ['service-reports', 'Service Reports', 'Diagnosis, work performed and photos'],
-            ['service-history', 'Service History', 'Customer and machine timelines'],
         ],
         'Maintenance' => [
             ['amc', 'AMC Management', 'Contracts, service balance and expiry'],
