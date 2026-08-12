@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\AmcPlan;
 use App\Models\Brand;
 use App\Models\Customer;
 use App\Models\Department;
 use App\Models\Machine;
+use App\Models\MachineCategory;
 use App\Models\Role;
 use App\Models\Skill;
 use App\Models\Technician;
@@ -52,7 +54,8 @@ class MasterDataTest extends TestCase
     {
         $c = Customer::create(['customer_code' => 'C1', 'customer_type' => 'company', 'customer_name' => 'Acme', 'mobile' => '9', 'address' => 'A', 'city' => 'C', 'state' => 'S', 'pin_code' => '1', 'status' => 'active']);
         $brand = Brand::create(['brand_name' => 'HydroTech']);
-        $this->post(route('machines.store'), ['machine_name' => 'Press', 'brand_id' => $brand->id, 'model' => 'P100', 'service_period' => '6_months', 'buying_price' => 10000, 'selling_price' => 12000, 'total_stock' => 5, 'location_name' => 'Main Warehouse', 'status' => 'active'])->assertRedirect(route('machines.index'));
+        $category = MachineCategory::create(['category_name' => 'Press']);
+        $this->post(route('machines.store'), ['machine_name' => 'Press', 'brand_id' => $brand->id, 'machine_category_id' => $category->id, 'model' => 'P100', 'service_period' => '6_months', 'buying_price' => 10000, 'selling_price' => 12000, 'total_stock' => 5, 'location_name' => 'Main Warehouse', 'status' => 'active'])->assertRedirect(route('machines.index'));
         $this->assertMatchesRegularExpression('/^PR\d{6}$/', Machine::firstOrFail()->machine_code);
         $s = Skill::create(['name' => 'Electrical', 'category' => 'electrical', 'is_active' => true]);
         $this->post(route('technicians.store'), ['name' => 'Tech', 'gender' => 'male', 'mobile' => '8', 'password' => 'password123', 'joining_date' => '2026-01-01', 'employment_type' => 'full_time', 'status' => 'active', 'salary_type' => 'monthly', 'monthly_salary' => 10000, 'daily_salary' => '', 'overtime_rate' => '', 'travel_allowance' => '', 'food_allowance' => '', 'other_allowance' => '', 'esi' => '', 'pf' => '', 'skills' => [$s->id]])->assertRedirect(route('technicians.index'));
@@ -97,6 +100,36 @@ class MasterDataTest extends TestCase
 
         $this->delete(route('departments.destroy', $department))->assertRedirect();
         $this->assertDatabaseMissing('departments', ['id' => $department->id]);
+    }
+
+    public function test_amc_plan_crud(): void
+    {
+        $category = MachineCategory::create(['category_name' => 'Chimney']);
+        $brand = Brand::create(['brand_name' => 'Kutchina Chimney']);
+        $data = [
+            'plan_name' => 'Gold Plan',
+            'machine_category_id' => $category->id,
+            'brand_id' => $brand->id,
+            'plan_type' => 'comprehensive',
+            'description' => 'Internal parts included',
+            'duration' => '1_year',
+            'parts_included' => '1',
+            'price' => '4999.50',
+            'tax_percent' => '18',
+            'status' => 'active',
+        ];
+
+        $this->post(route('amc-plans.store'), $data)->assertRedirect(route('amc-plans.index'));
+        $plan = AmcPlan::firstOrFail();
+        $this->assertMatchesRegularExpression('/^AMC-\d{3}$/', $plan->plan_code);
+        $this->get(route('amc-plans.index'))->assertOk()->assertSee('Gold Plan')->assertSee('Kutchina Chimney');
+
+        $this->put(route('amc-plans.update', $plan), [...$data, 'plan_name' => 'Platinum Plan', 'parts_included' => '0'])
+            ->assertRedirect(route('amc-plans.index'));
+        $this->assertDatabaseHas('amc_plans', ['id' => $plan->id, 'plan_name' => 'Platinum Plan', 'parts_included' => false]);
+
+        $this->delete(route('amc-plans.destroy', $plan))->assertRedirect();
+        $this->assertDatabaseMissing('amc_plans', ['id' => $plan->id]);
     }
 
     public function test_machine_index_renders_with_records(): void

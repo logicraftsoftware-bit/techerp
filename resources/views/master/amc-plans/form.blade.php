@@ -45,9 +45,9 @@
 
             @include('master._field', ['model' => $amcPlan, 'name' => 'parts_included', 'label' => 'Parts Included', 'type' => 'select', 'required' => true, 'options' => ['1' => 'Yes', '0' => 'No']])
 
-            @include('master._field', ['model' => $amcPlan, 'name' => 'price', 'label' => 'Price', 'type' => 'number', 'required' => true])
+            @include('master._field', ['model' => $amcPlan, 'name' => 'price', 'label' => 'Price', 'type' => 'number', 'required' => true, 'step' => '0.01', 'min' => '0'])
 
-            @include('master._field', ['model' => $amcPlan, 'name' => 'tax_percent', 'label' => 'Tax (%)', 'type' => 'number', 'required' => true])
+            @include('master._field', ['model' => $amcPlan, 'name' => 'tax_percent', 'label' => 'Tax (%)', 'type' => 'number', 'required' => true, 'step' => '0.01', 'min' => '0', 'max' => '100'])
 
             @include('master._field', ['model' => $amcPlan, 'name' => 'status', 'label' => 'Status', 'type' => 'select', 'required' => true, 'options' => ['active' => 'Active', 'inactive' => 'Inactive']])
 
