@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
@@ -12,6 +13,15 @@
 }
 
 [x-cloak] { display: none !important; }
+.dark body, .dark main { @apply bg-slate-950 text-slate-200; }
+.dark header { @apply border-slate-800 bg-slate-900/90; }
+.dark header h1 { @apply text-white; }
+.dark .card { @apply border-slate-700/80 bg-slate-900 text-slate-200; }
+.dark .form-label { @apply text-slate-300; }
+.dark .form-input { @apply border-slate-700 bg-slate-800 text-slate-100 placeholder:text-slate-500 focus:border-blue-500 focus:ring-blue-950; }
+.dark .btn-secondary { @apply border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700; }
+.dark table thead { @apply bg-slate-800 text-slate-400; }
+.dark table tbody { @apply divide-slate-800; }
 @layer components {
     .card { @apply rounded-2xl border border-slate-200/80 bg-white shadow-sm; }
     .nav-link { @apply flex items-center gap-3 rounded-xl px-3 py-2.5 font-medium text-slate-300 transition hover:bg-white/5 hover:text-white; }

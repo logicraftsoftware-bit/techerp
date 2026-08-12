@@ -6,6 +6,11 @@ import 'datatables.net-dt/css/dataTables.dataTables.css';
 
 window.Alpine = Alpine;
 window.Swal = Swal;
+window.setTheme = (theme) => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('theme', theme);
+};
+window.toggleTheme = () => window.setTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
 Alpine.start();
 
 const flashSuccess = document.querySelector('[data-flash-success]')?.dataset.flashSuccess;
