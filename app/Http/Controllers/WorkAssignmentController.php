@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\WorkAssignmentRequest;
 use App\Models\ServiceRequest;
-use App\Models\Skill;
 use App\Models\Technician;
 use App\Models\WorkAssignment;
 use Illuminate\Http\RedirectResponse;
@@ -30,7 +29,9 @@ class WorkAssignmentController extends Controller
 
     public function store(WorkAssignmentRequest $request): RedirectResponse
     {
-        $assignment = WorkAssignment::create($request->validated() + ['assigned_by' => $request->user()->id]);
+        $serviceRequest = ServiceRequest::findOrFail($request->integer('service_request_id'));
+        $assignment = WorkAssignment::create($request->validated() + ['priority' => $serviceRequest->priority, 'assigned_by' => $request->user()->id]);
+        $serviceRequest->update(['status' => $assignment->status]);
         $assignment->statusHistories()->create(['to_status' => $assignment->status, 'remarks' => 'Work assignment created.', 'changed_by' => $request->user()->id]);
 
         return to_route('assignments.index')->with('success', 'Work assigned successfully.');
@@ -49,7 +50,9 @@ class WorkAssignmentController extends Controller
     public function update(WorkAssignmentRequest $request, WorkAssignment $assignment): RedirectResponse
     {
         $oldStatus = $assignment->status;
-        $assignment->update($request->validated());
+        $serviceRequest = ServiceRequest::findOrFail($request->integer('service_request_id'));
+        $assignment->update($request->validated() + ['priority' => $serviceRequest->priority]);
+        $serviceRequest->update(['status' => $assignment->status]);
         if ($oldStatus !== $assignment->status) {
             $assignment->statusHistories()->create(['from_status' => $oldStatus, 'to_status' => $assignment->status, 'remarks' => 'Status changed while editing assignment.', 'changed_by' => $request->user()->id]);
         }
@@ -70,7 +73,6 @@ class WorkAssignmentController extends Controller
             'assignment' => $assignment,
             'requests' => ServiceRequest::with(['customer', 'machine'])->whereNotIn('status', ['completed', 'cancelled'])->latest()->get(),
             'technicians' => Technician::with('skills')->where('status', 'active')->orderBy('name')->get(),
-            'skills' => Skill::where('is_active', true)->orderBy('name')->get(),
         ]);
     }
 }

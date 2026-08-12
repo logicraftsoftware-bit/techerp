@@ -24,7 +24,7 @@ class WorkStatusController extends Controller
 
     public function update(Request $request, WorkAssignment $assignment): RedirectResponse
     {
-        $data = $request->validate(['status' => ['required', Rule::in(['assigned', 'accepted', 'en_route', 'in_progress', 'completed', 'cancelled'])], 'remarks' => ['nullable', 'string', 'max:1000']]);
+        $data = $request->validate(['status' => ['required', Rule::in(['scheduled', 'in_progress', 'completed', 'cancelled'])], 'remarks' => ['nullable', 'string', 'max:1000']]);
         $old = $assignment->status;
         $assignment->update(['status' => $data['status']]);
         if ($old !== $data['status'] || filled($data['remarks'] ?? null)) {
@@ -32,7 +32,7 @@ class WorkStatusController extends Controller
         }
         if ($data['status'] === 'completed' && ! $assignment->serviceRequest->workAssignments()->where('status', '!=', 'completed')->exists()) {
             $assignment->serviceRequest->update(['status' => 'completed']);
-        } elseif (in_array($data['status'], ['en_route', 'in_progress'], true)) {
+        } elseif ($data['status'] === 'in_progress') {
             $assignment->serviceRequest->update(['status' => 'in_progress']);
         }
 
