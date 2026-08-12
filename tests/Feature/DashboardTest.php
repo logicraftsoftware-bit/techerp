@@ -50,4 +50,16 @@ class DashboardTest extends TestCase
             'Insights & Control',
         ], array_keys(config('crm.navigation')));
     }
+
+    public function test_service_operations_menu_is_in_workflow_order(): void
+    {
+        $this->assertSame([
+            'service-requests',
+            'assignments',
+            'job-cards',
+            'work-status',
+            'service-reports',
+            'service-history',
+        ], array_column(config('crm.navigation.Service Operations'), 0));
+    }
 }

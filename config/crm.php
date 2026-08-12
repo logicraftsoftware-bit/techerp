@@ -22,12 +22,11 @@ return [
         ],
         'Service Operations' => [
             ['service-requests', 'Service Requests', 'Complaints, priority and assignment'],
-            ['job-cards', 'Job Cards', 'Scheduling and field service execution'],
             ['assignments', 'Work Assignment', 'Availability, workload and skills'],
+            ['job-cards', 'Job Cards', 'Scheduling and field service execution'],
             ['work-status', 'Work Status', 'Live status timeline and history'],
             ['service-reports', 'Service Reports', 'Diagnosis, work performed and photos'],
             ['service-history', 'Service History', 'Customer and machine timelines'],
-            ['ratings', 'Signatures & Ratings', 'Completion approval and feedback'],
         ],
         'Maintenance' => [
             ['amc', 'AMC Management', 'Contracts, service balance and expiry'],
