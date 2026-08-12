@@ -61,4 +61,9 @@ class Technician extends Model
     {
         return $this->belongsToMany(Skill::class)->withPivot(['skill_level', 'experience_years', 'certification', 'certification_expiry', 'remarks'])->withTimestamps();
     }
+
+    public function workAssignments(): HasMany
+    {
+        return $this->hasMany(WorkAssignment::class);
+    }
 }

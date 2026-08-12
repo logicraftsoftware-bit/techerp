@@ -14,6 +14,7 @@ use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WorkAssignmentController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -36,6 +37,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::resource('machine-categories', MachineCategoryController::class)->except('show');
     Route::resource('amc-plans', AmcPlanController::class)->except('show');
     Route::resource('service-requests', ServiceRequestController::class);
+    Route::resource('assignments', WorkAssignmentController::class);
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'password'])->name('profile.password');

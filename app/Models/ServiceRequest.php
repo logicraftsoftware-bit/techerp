@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ServiceRequest extends Model
 {
@@ -56,5 +57,10 @@ class ServiceRequest extends Model
     public function amcPlans(): BelongsToMany
     {
         return $this->belongsToMany(AmcPlan::class)->withTimestamps();
+    }
+
+    public function workAssignments(): HasMany
+    {
+        return $this->hasMany(WorkAssignment::class);
     }
 }

@@ -22,7 +22,7 @@
                 <a href="{{ route('dashboard') }}" class="nav-link mb-3 py-3.5 {{ request()->routeIs('dashboard') ? 'nav-link-active' : '' }}"><svg class="size-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="text-base">Dashboard</span></a>
                 @foreach(config('crm.navigation') as $group => $items)
                     @php
-                        $resources = ['customers', 'brands', 'departments', 'machine-categories', 'machines', 'technicians', 'skills', 'amc-plans', 'service-requests'];
+                        $resources = ['customers', 'brands', 'departments', 'machine-categories', 'machines', 'technicians', 'skills', 'amc-plans', 'service-requests', 'assignments'];
                         $groupOpen = collect($items)->contains(function ($item) use ($resources) {
                             return in_array($item[0], $resources)
                                 ? request()->routeIs($item[0].'.*')
