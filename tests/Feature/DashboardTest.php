@@ -38,4 +38,16 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertSee('x-data="{ open: true }"', false);
     }
+
+    public function test_sidebar_groups_are_in_operational_order(): void
+    {
+        $this->assertSame([
+            'Master Data',
+            'Parts & Inventory',
+            'Service Operations',
+            'Maintenance',
+            'Workforce',
+            'Insights & Control',
+        ], array_keys(config('crm.navigation')));
+    }
 }
