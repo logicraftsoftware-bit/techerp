@@ -18,6 +18,7 @@ use App\Http\Controllers\SkillController;
 use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WorkAssignmentController;
+use App\Http\Controllers\WorkforceController;
 use App\Http\Controllers\WorkStatusController;
 use Illuminate\Support\Facades\Route;
 
@@ -64,6 +65,17 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/parts-requests', [PartsInventoryController::class, 'requests'])->name('parts-requests.index');
     Route::post('/parts-requests', [PartsInventoryController::class, 'requestPart'])->name('parts-requests.store');
     Route::patch('/parts-requests/{partRequest}', [PartsInventoryController::class, 'actionRequest'])->name('parts-requests.update');
+    Route::get('/attendance', [WorkforceController::class, 'attendance'])->name('attendance.index');
+    Route::post('/attendance', [WorkforceController::class, 'saveAttendance'])->name('attendance.store');
+    Route::get('/leave', [WorkforceController::class, 'leaves'])->name('leave.index');
+    Route::post('/leave', [WorkforceController::class, 'storeLeave'])->name('leave.store');
+    Route::patch('/leave/{leave}', [WorkforceController::class, 'updateLeave'])->name('leave.update');
+    Route::get('/salary', [WorkforceController::class, 'salaries'])->name('salary.index');
+    Route::post('/salary/generate', [WorkforceController::class, 'generateSalaries'])->name('salary.generate');
+    Route::patch('/salary/{salary}/pay', [WorkforceController::class, 'paySalary'])->name('salary.pay');
+    Route::get('/expenses', [WorkforceController::class, 'expenses'])->name('expenses.index');
+    Route::post('/expenses', [WorkforceController::class, 'storeExpense'])->name('expenses.store');
+    Route::patch('/expenses/{expense}', [WorkforceController::class, 'updateExpense'])->name('expenses.update');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
