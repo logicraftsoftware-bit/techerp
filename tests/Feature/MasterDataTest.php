@@ -139,6 +139,19 @@ class MasterDataTest extends TestCase
             ->assertSee('Free Service');
     }
 
+    public function test_machine_form_has_searchable_brand_and_category_fields(): void
+    {
+        Brand::create(['brand_name' => 'Kutchina']);
+        MachineCategory::create(['category_name' => 'Chimney']);
+
+        $this->get(route('machines.create'))
+            ->assertOk()
+            ->assertSee('Search or select brand')
+            ->assertSee('Search or select category')
+            ->assertSee('Kutchina')
+            ->assertSee('Chimney');
+    }
+
     public function test_machine_document_is_served_without_public_storage_link(): void
     {
         Storage::fake('public');
