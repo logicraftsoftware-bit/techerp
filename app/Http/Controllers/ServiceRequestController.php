@@ -6,6 +6,7 @@ use App\Http\Requests\ServiceRequestRequest;
 use App\Models\AmcPlan;
 use App\Models\Customer;
 use App\Models\Machine;
+use App\Models\MachineStockTransaction;
 use App\Models\ServiceRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,8 +40,32 @@ class ServiceRequestController extends Controller
     public function store(ServiceRequestRequest $request): RedirectResponse
     {
         DB::transaction(function () use ($request): void {
-            $serviceRequest = ServiceRequest::create($this->requestData($request) + ['created_by' => $request->user()->id]);
+            $data = $this->requestData($request);
+            $machine = null;
+
+            if ($data['request_type'] === 'new_installation') {
+                $machine = Machine::lockForUpdate()->findOrFail($data['machine_id']);
+                if ($machine->total_stock < 1) {
+                    throw ValidationException::withMessages(['machine_id' => 'Selected machine is out of stock.']);
+                }
+            }
+
+            $serviceRequest = ServiceRequest::create($data + ['created_by' => $request->user()->id]);
             $serviceRequest->amcPlans()->sync($request->validated('amc_plan_ids', []));
+
+            if ($machine) {
+                $machine->decrement('total_stock');
+                MachineStockTransaction::create([
+                    'machine_id' => $machine->id,
+                    'service_request_id' => $serviceRequest->id,
+                    'transaction_type' => 'installation',
+                    'quantity' => -1,
+                    'balance_after' => $machine->total_stock,
+                    'reference' => $serviceRequest->request_code,
+                    'remarks' => 'Deducted for new installation service request.',
+                    'created_by' => $request->user()->id,
+                ]);
+            }
         });
 
         return to_route('service-requests.index')->with('success', 'Service request created.');
@@ -102,7 +127,6 @@ class ServiceRequestController extends Controller
         $data['brand_id'] = $machine->brand_id;
         $data['product_name'] = $machine->machine_name;
         $data['model'] = $machine->model;
-        $data['serial_number'] = $machine->serial_number;
 
         return $data;
     }

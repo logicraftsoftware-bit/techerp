@@ -21,7 +21,6 @@
             <tr>
                 <th class="px-4 py-4">Code / Machine</th>
                 <th class="px-4 py-4">Brand / Model</th>
-                <th class="px-4 py-4">Serial / Asset</th>
                 <th class="px-4 py-4">Free Service</th>
                 <th class="px-4 py-4">Price</th>
                 <th class="px-4 py-4">Stock / Location</th>
@@ -37,7 +36,6 @@
                         <div class="font-medium">{{ $machine->machine_name }}</div>
                     </td>
                     <td class="px-4 py-4">{{ $machine->brand }}<div class="text-xs text-slate-400">{{ $machine->model }}</div><div class="text-xs text-slate-400">{{ $machine->machineCategory?->category_name }}</div></td>
-                    <td class="px-4 py-4">{{ $machine->serial_number ?: '—' }}<div class="text-xs text-slate-400">{{ $machine->asset_number ?: '—' }}</div></td>
                     <td class="px-4 py-4">{{ str($machine->service_period)->replace('_', ' ')->title() }}</td>
                     <td class="px-4 py-4">₹{{ number_format((float) $machine->selling_price, 2) }}<div class="text-xs text-slate-400">Buy: ₹{{ number_format((float) $machine->buying_price, 2) }}</div></td>
                     <td class="px-4 py-4">{{ $machine->total_stock }}<div class="text-xs text-slate-400">{{ $machine->location_name }}</div></td>
@@ -54,7 +52,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td class="px-4 py-12 text-center text-slate-400" colspan="8">No machines found.</td></tr>
+                <tr><td class="px-4 py-12 text-center text-slate-400" colspan="7">No machines found.</td></tr>
             @endforelse
         </tbody>
     </table>

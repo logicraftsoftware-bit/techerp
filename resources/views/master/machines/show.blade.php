@@ -16,8 +16,6 @@
             'Machine Category' => $machine->machineCategory?->category_name,
             'Brand' => $machine->brand,
             'Model' => $machine->model,
-            'Serial Number' => $machine->serial_number,
-            'Asset Number' => $machine->asset_number,
             'Mfg Date' => $machine->manufacturing_date?->format('d M Y'),
             'Free Service Period' => str($machine->service_period)->replace('_', ' ')->title(),
             'Buying Price' => '₹'.number_format((float) $machine->buying_price, 2),

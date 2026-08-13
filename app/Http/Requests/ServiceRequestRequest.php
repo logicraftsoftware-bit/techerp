@@ -20,6 +20,8 @@ class ServiceRequestRequest extends FormRequest
             'customer_id' => ['required', 'exists:customers,id'],
             'contact_phone' => ['required', 'string', 'max:20'],
             'machine_id' => ['required', 'exists:machines,id'],
+            'serial_number' => ['nullable', 'string', 'max:100'],
+            'asset_number' => ['nullable', 'string', 'max:100'],
             'amc_plan_ids' => ['nullable', 'array'],
             'amc_plan_ids.*' => ['integer', 'distinct', 'exists:amc_plans,id'],
             'subject' => ['required', 'string', 'max:190'],

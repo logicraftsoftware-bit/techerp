@@ -10,6 +10,7 @@ return [
             ['skills', 'Technician Skills', 'Skill master, levels and certifications'],
             ['amc-plans', 'AMC Plan Master', 'Plan types, duration and pricing'],
             ['machines', 'Machines', 'Assets, documents and maintenance history'],
+            ['machine-inventory', 'Machine Inventory', 'Update machine stock levels and view stock movement history'],
             ['technicians', 'Technicians', 'Staff profiles, employment and salary structure'],
         ],
         'Parts & Inventory' => [

@@ -19,7 +19,7 @@ class MachineController extends Controller
 {
     public function index(Request $r): View
     {
-        $records = Machine::with(['customer', 'machineCategory'])->when($r->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('machine_name', 'like', "%$s%")->orWhere('machine_code', 'like', "%$s%")->orWhere('serial_number', 'like', "%$s%")))->latest()->paginate(15)->withQueryString();
+        $records = Machine::with(['customer', 'machineCategory'])->when($r->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('machine_name', 'like', "%$s%")->orWhere('machine_code', 'like', "%$s%")->orWhere('model', 'like', "%$s%")))->latest()->paginate(15)->withQueryString();
 
         return view('master.machines.index', compact('records'));
     }

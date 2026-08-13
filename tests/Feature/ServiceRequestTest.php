@@ -32,12 +32,14 @@ class ServiceRequestTest extends TestCase
         $customer = $this->customer('Acme');
         $category = MachineCategory::create(['category_name' => 'Chimney']);
         $brand = Brand::create(['brand_name' => 'Kutchina']);
-        $machine = Machine::create(['machine_name' => 'Kutchina Chimney', 'machine_code' => 'KC123456', 'machine_category_id' => $category->id, 'brand_id' => $brand->id, 'model' => 'KC-100', 'serial_number' => 'SER-100', 'status' => 'active']);
+        $machine = Machine::create(['machine_name' => 'Kutchina Chimney', 'machine_code' => 'KC123456', 'machine_category_id' => $category->id, 'brand_id' => $brand->id, 'model' => 'KC-100', 'total_stock' => 5, 'status' => 'active']);
         $plan = AmcPlan::create(['plan_name' => 'Gold Plan', 'machine_category_id' => $category->id, 'brand_id' => $brand->id, 'plan_type' => 'comprehensive', 'duration' => '1_year', 'parts_included' => true, 'price' => 5000, 'tax_percent' => 18, 'status' => 'active']);
         $data = $this->baseData($customer) + [
             'request_type' => 'new_installation',
             'service_type' => 'installation',
             'machine_id' => $machine->id,
+            'serial_number' => 'SER-100',
+            'asset_number' => 'AST-100',
             'amc_plan_ids' => [$plan->id],
         ];
 
@@ -45,7 +47,11 @@ class ServiceRequestTest extends TestCase
         $request = ServiceRequest::firstOrFail();
         $this->assertMatchesRegularExpression('/^SR-\d{6}-\d{4}$/', $request->request_code);
         $this->assertSame('Kutchina Chimney', $request->product_name);
+        $this->assertSame('SER-100', $request->serial_number);
+        $this->assertSame('AST-100', $request->asset_number);
         $this->assertTrue($request->amcPlans->contains($plan));
+        $this->assertSame(4, $machine->fresh()->total_stock);
+        $this->assertDatabaseHas('machine_stock_transactions', ['machine_id' => $machine->id, 'service_request_id' => $request->id, 'quantity' => -1, 'balance_after' => 4]);
         $this->get(route('service-requests.show', $request))->assertOk()->assertSee('Kutchina Chimney')->assertSee('Acme');
 
         $this->put(route('service-requests.update', $request), [...$data, 'subject' => 'Install updated'])
@@ -53,6 +59,23 @@ class ServiceRequestTest extends TestCase
         $this->assertDatabaseHas('service_requests', ['id' => $request->id, 'subject' => 'Install updated']);
         $this->delete(route('service-requests.destroy', $request))->assertRedirect();
         $this->assertDatabaseMissing('service_requests', ['id' => $request->id]);
+    }
+
+    public function test_new_installation_rejected_when_machine_out_of_stock(): void
+    {
+        $customer = $this->customer('Acme');
+        $category = MachineCategory::create(['category_name' => 'Chimney']);
+        $brand = Brand::create(['brand_name' => 'Kutchina']);
+        $machine = Machine::create(['machine_name' => 'Kutchina Chimney', 'machine_code' => 'KC999999', 'machine_category_id' => $category->id, 'brand_id' => $brand->id, 'model' => 'KC-100', 'total_stock' => 0, 'status' => 'active']);
+        $data = $this->baseData($customer) + [
+            'request_type' => 'new_installation',
+            'service_type' => 'installation',
+            'machine_id' => $machine->id,
+        ];
+
+        $this->post(route('service-requests.store'), $data)->assertSessionHasErrors('machine_id');
+        $this->assertSame(0, ServiceRequest::count());
+        $this->assertSame(0, $machine->fresh()->total_stock);
     }
 
     public function test_existing_service_requires_machine_belonging_to_customer(): void
@@ -73,7 +96,7 @@ class ServiceRequestTest extends TestCase
     {
         $this->get(route('service-requests.create'))->assertOk()
             ->assertSee('Search customer by name, code or phone')
-            ->assertSee('Search machine by code, name, model or serial number')
+            ->assertSee('Search machine by code, name or model')
             ->assertSee('Product Category')
             ->assertSee('select multiple if required');
     }

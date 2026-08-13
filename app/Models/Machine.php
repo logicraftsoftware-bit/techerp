@@ -51,4 +51,9 @@ class Machine extends Model
     {
         return $this->hasMany(MachineDocument::class);
     }
+
+    public function stockTransactions(): HasMany
+    {
+        return $this->hasMany(MachineStockTransaction::class);
+    }
 }

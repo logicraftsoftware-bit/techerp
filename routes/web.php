@@ -9,6 +9,7 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\JobCardController;
 use App\Http\Controllers\MachineCategoryController;
 use App\Http\Controllers\MachineController;
+use App\Http\Controllers\MachineInventoryController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\PartsInventoryController;
 use App\Http\Controllers\ProfileController;
@@ -36,6 +37,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/technicians/{technician}/photo', [TechnicianController::class, 'photo'])->name('technicians.photo');
     Route::get('/technicians/{technician}/id-card', [TechnicianController::class, 'idCard'])->name('technicians.id-card');
     Route::resources(['customers' => CustomerController::class, 'machines' => MachineController::class, 'technicians' => TechnicianController::class]);
+    Route::get('/machine-inventory', [MachineInventoryController::class, 'index'])->name('machine-inventory.index');
+    Route::post('/machine-inventory', [MachineInventoryController::class, 'transact'])->name('machine-inventory.store');
     Route::resource('skills', SkillController::class)->except('show');
     Route::resource('brands', BrandController::class)->except('show');
     Route::resource('departments', DepartmentController::class)->except('show');

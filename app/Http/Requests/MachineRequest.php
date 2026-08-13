@@ -14,15 +14,11 @@ class MachineRequest extends FormRequest
 
     public function rules(): array
     {
-        $id = $this->route('machine')?->id;
-
         return [
             'machine_name' => ['required', 'string', 'max:150'],
             'brand_id' => ['required', 'exists:brands,id'],
             'machine_category_id' => ['required', 'exists:machine_categories,id'],
             'model' => ['required', 'string', 'max:100'],
-            'serial_number' => ['nullable', 'max:100', Rule::unique('machines')->ignore($id)],
-            'asset_number' => ['nullable', 'max:100', Rule::unique('machines')->ignore($id)],
             'manufacturing_date' => ['nullable', 'date', 'before_or_equal:today'],
             'service_period' => ['required', Rule::in(['4_months', '6_months', '1_year', '2_years'])],
             'buying_price' => ['required', 'numeric', 'min:0'],

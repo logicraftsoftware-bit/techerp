@@ -9,6 +9,8 @@
           'machineId' => old('machine_id', $serviceRequest->machine_id),
           'amcPlanIds' => old('amc_plan_ids', $serviceRequest->amcPlans->pluck('id')),
           'phone' => old('contact_phone', $serviceRequest->contact_phone),
+          'serialNumber' => old('serial_number', $serviceRequest->serial_number),
+          'assetNumber' => old('asset_number', $serviceRequest->asset_number),
           'address' => old('service_address', $serviceRequest->service_address),
           'city' => old('city', $serviceRequest->city),
           'state' => old('state', $serviceRequest->state),
@@ -44,15 +46,16 @@
 
             <div class="relative md:col-span-2" @click.outside="machineOpen = false">
                 <label class="form-label">Machine *</label><input type="hidden" name="machine_id" x-model="machineId">
-                <div class="relative"><input type="search" x-model="machineSearch" @focus="machineOpen = true" @input="machineId = ''; machineOpen = true" class="form-input pr-10" :placeholder="requestType === 'existing_service' ? 'Search this customer’s machine' : 'Search machine by code, name, model or serial number'" autocomplete="off"><button type="button" @click="machineOpen = !machineOpen" class="absolute inset-y-0 right-0 px-3 text-slate-400">⌄</button></div>
-                <div x-cloak x-show="machineOpen" class="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl"><template x-for="machine in filteredMachines" :key="machine.id"><button type="button" @click="selectMachine(machine)" class="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-blue-50"><span class="block font-medium" x-text="`${machine.machine_code} — ${machine.machine_name}`"></span><span class="text-xs text-slate-400" x-text="[machine.model, machine.serial_number].filter(Boolean).join(' · ')"></span></button></template><p x-show="!filteredMachines.length" class="p-4 text-center text-sm text-slate-400" x-text="requestType === 'existing_service' && !customerId ? 'Select a customer first.' : 'No matching machine.'"></p></div>
+                <div class="relative"><input type="search" x-model="machineSearch" @focus="machineOpen = true" @input="machineId = ''; machineOpen = true" class="form-input pr-10" :placeholder="requestType === 'existing_service' ? 'Search this customer’s machine' : 'Search machine by code, name or model'" autocomplete="off"><button type="button" @click="machineOpen = !machineOpen" class="absolute inset-y-0 right-0 px-3 text-slate-400">⌄</button></div>
+                <div x-cloak x-show="machineOpen" class="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl"><template x-for="machine in filteredMachines" :key="machine.id"><button type="button" @click="selectMachine(machine)" class="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-blue-50"><span class="block font-medium" x-text="`${machine.machine_code} — ${machine.machine_name}`"></span><span class="text-xs text-slate-400" x-text="machine.model || ''"></span></button></template><p x-show="!filteredMachines.length" class="p-4 text-center text-sm text-slate-400" x-text="requestType === 'existing_service' && !customerId ? 'Select a customer first.' : 'No matching machine.'"></p></div>
             </div>
 
             <div><label class="form-label">Product Category</label><input :value="selectedMachine?.machine_category?.category_name || '—'" class="form-input bg-slate-50" readonly></div>
             <div><label class="form-label">Product Type / Brand</label><input :value="selectedMachine?.brand_master?.brand_name || '—'" class="form-input bg-slate-50" readonly></div>
             <div><label class="form-label">Product Name</label><input :value="selectedMachine?.machine_name || '—'" class="form-input bg-slate-50" readonly></div>
             <div><label class="form-label">Model</label><input :value="selectedMachine?.model || '—'" class="form-input bg-slate-50" readonly></div>
-            <div><label class="form-label">Serial Number</label><input :value="selectedMachine?.serial_number || '—'" class="form-input bg-slate-50" readonly></div>
+            <div><label class="form-label">Serial Number</label><input name="serial_number" x-model="serialNumber" class="form-input" placeholder="Serial number of this unit" maxlength="100"></div>
+            <div><label class="form-label">Asset Number</label><input name="asset_number" x-model="assetNumber" class="form-input" placeholder="Asset number of this unit" maxlength="100"></div>
 
             <div x-show="requestType === 'existing_service'" x-cloak><label class="form-label">Service Coverage *</label><select name="service_type" class="form-input" :required="requestType === 'existing_service'" :disabled="requestType !== 'existing_service'"><option value="">Select coverage</option>@foreach(['amc' => 'AMC Service', 'free_service' => 'Free Service', 'paid_service' => 'Paid Service'] as $value => $label)<option value="{{ $value }}" @selected(old('service_type', $serviceRequest->service_type) === $value)>{{ $label }}</option>@endforeach</select></div>
             <input type="hidden" name="service_type" value="installation" :disabled="requestType !== 'new_installation'">
@@ -94,7 +97,8 @@ function serviceRequestForm(customers, machines, amcPlans, initial) {
         customerId: initial.customerId ? String(initial.customerId) : '', customerSearch: '', customerOpen: false,
         machineId: initial.machineId ? String(initial.machineId) : '', machineSearch: '', machineOpen: false,
         selectedAmcPlanIds: Array.from(initial.amcPlanIds || [], String), amcSearch: '',
-        phone: initial.phone || '', address: initial.address || '', city: initial.city || '', state: initial.state || '', pinCode: initial.pinCode || '',
+        phone: initial.phone || '', serialNumber: initial.serialNumber || '', assetNumber: initial.assetNumber || '',
+        address: initial.address || '', city: initial.city || '', state: initial.state || '', pinCode: initial.pinCode || '',
         init() {
             const customer = this.customers.find(item => String(item.id) === this.customerId);
             const machine = this.machines.find(item => String(item.id) === this.machineId);
@@ -112,7 +116,7 @@ function serviceRequestForm(customers, machines, amcPlans, initial) {
         },
         get filteredMachines() {
             const term = this.machineSearch.toLowerCase().trim();
-            return this.availableMachines.filter(item => !term || `${item.machine_code} ${item.machine_name} ${item.model || ''} ${item.serial_number || ''}`.toLowerCase().includes(term));
+            return this.availableMachines.filter(item => !term || `${item.machine_code} ${item.machine_name} ${item.model || ''}`.toLowerCase().includes(term));
         },
         get selectedMachine() { return this.machines.find(item => String(item.id) === this.machineId); },
         get filteredAmcPlans() {
