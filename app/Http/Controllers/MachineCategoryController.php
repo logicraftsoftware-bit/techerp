@@ -10,6 +10,14 @@ use Illuminate\View\View;
 
 class MachineCategoryController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:machine-categories,view')->only(['index']);
+        $this->middleware('permission:machine-categories,create')->only(['create', 'store']);
+        $this->middleware('permission:machine-categories,update')->only(['edit', 'update']);
+        $this->middleware('permission:machine-categories,delete')->only(['destroy']);
+    }
+
     public function index(Request $request): View
     {
         $records = MachineCategory::query()

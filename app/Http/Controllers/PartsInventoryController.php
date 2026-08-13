@@ -19,6 +19,26 @@ use Illuminate\View\View;
 
 class PartsInventoryController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:parts,view')->only(['parts']);
+        $this->middleware('permission:parts,create')->only(['createPart', 'savePart']);
+        $this->middleware('permission:parts,delete')->only(['deletePart']);
+        $this->middleware('permission:suppliers,view')->only(['suppliers']);
+        $this->middleware('permission:suppliers,create')->only(['createSupplier', 'saveSupplier']);
+        $this->middleware('permission:suppliers,delete')->only(['deleteSupplier']);
+        $this->middleware('permission:inventory,view')->only(['inventory']);
+        $this->middleware('permission:inventory,create')->only(['createTransaction', 'transact']);
+        $this->middleware('permission:parts-issues,view')->only(['issues']);
+        $this->middleware('permission:parts-issues,create')->only(['createIssue', 'issue']);
+        $this->middleware('permission:parts-issues,update')->only(['updateIssue']);
+        $this->middleware('permission:job-parts,view')->only(['jobParts']);
+        $this->middleware('permission:job-parts,create')->only(['createJobPart', 'usePart']);
+        $this->middleware('permission:parts-requests,view')->only(['requests']);
+        $this->middleware('permission:parts-requests,create')->only(['createRequest', 'requestPart']);
+        $this->middleware('permission:parts-requests,update')->only(['actionRequest']);
+    }
+
     public function parts(): View
     {
         return view('parts-inventory.parts', ['records' => Part::latest()->paginate(15)]);

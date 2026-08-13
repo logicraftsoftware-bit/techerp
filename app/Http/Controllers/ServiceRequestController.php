@@ -16,6 +16,14 @@ use Illuminate\View\View;
 
 class ServiceRequestController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:service-requests,view')->only(['index', 'show']);
+        $this->middleware('permission:service-requests,create')->only(['create', 'store']);
+        $this->middleware('permission:service-requests,update')->only(['edit', 'update']);
+        $this->middleware('permission:service-requests,delete')->only(['destroy']);
+    }
+
     public function index(Request $request): View
     {
         $records = ServiceRequest::with(['customer', 'machine'])

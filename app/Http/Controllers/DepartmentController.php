@@ -10,6 +10,14 @@ use Illuminate\View\View;
 
 class DepartmentController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:departments,view')->only(['index']);
+        $this->middleware('permission:departments,create')->only(['create', 'store']);
+        $this->middleware('permission:departments,update')->only(['edit', 'update']);
+        $this->middleware('permission:departments,delete')->only(['destroy']);
+    }
+
     public function index(Request $request): View
     {
         $records = Department::query()

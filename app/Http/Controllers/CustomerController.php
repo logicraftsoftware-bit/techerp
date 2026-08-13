@@ -12,6 +12,14 @@ use Illuminate\View\View;
 
 class CustomerController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:customers,view')->only(['index', 'show']);
+        $this->middleware('permission:customers,create')->only(['create', 'store']);
+        $this->middleware('permission:customers,update')->only(['edit', 'update']);
+        $this->middleware('permission:customers,delete')->only(['destroy']);
+    }
+
     public function index(Request $r): View
     {
         $records = Customer::with('referredBy')->withCount(['contacts', 'machines'])->when($r->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('customer_name', 'like', "%$s%")->orWhere('customer_code', 'like', "%$s%")->orWhere('mobile', 'like', "%$s%")))->latest()->paginate(15)->withQueryString();

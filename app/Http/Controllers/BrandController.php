@@ -10,6 +10,14 @@ use Illuminate\View\View;
 
 class BrandController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:brands,view')->only(['index']);
+        $this->middleware('permission:brands,create')->only(['create', 'store']);
+        $this->middleware('permission:brands,update')->only(['edit', 'update']);
+        $this->middleware('permission:brands,delete')->only(['destroy']);
+    }
+
     public function index(Request $request): View
     {
         $records = Brand::withCount('machines')->when($request->search, fn ($q, $s) => $q->where('brand_name', 'like', "%$s%"))->orderBy('brand_name')->paginate(15)->withQueryString();
@@ -46,6 +54,6 @@ class BrandController extends Controller
         abort_if($brand->machines()->exists(), 422, 'This brand is used by machines.');
         $brand->delete();
 
-        return back()->with('success','Brand deleted.');
+        return back()->with('success', 'Brand deleted.');
     }
 }

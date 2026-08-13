@@ -9,6 +9,11 @@ use Illuminate\View\View;
 
 class JobCardController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:job-cards,view')->only(['index']);
+    }
+
     public function index(Request $request): View
     {
         $month = preg_match('/^\d{4}-\d{2}$/', (string) $request->month) ? $request->month : now()->format('Y-m');

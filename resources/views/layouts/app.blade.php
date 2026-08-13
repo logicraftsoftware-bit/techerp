@@ -20,9 +20,16 @@
             <div class="mb-3 flex items-center justify-between px-3"><p class="text-xs font-semibold uppercase tracking-[.14em] text-cyan-400">Workspace</p><span class="tracking-[.18em] text-cyan-400/70">•••</span></div>
             <div class="space-y-1">
                 <a href="{{ route('dashboard') }}" class="nav-link mb-3 py-3.5 {{ request()->routeIs('dashboard') ? 'nav-link-active' : '' }}"><svg class="size-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span class="text-base">Dashboard</span></a>
+                @php
+                    $canSeeEverything = auth()->user()->hasRole('super-admin');
+                @endphp
                 @foreach(config('crm.navigation') as $group => $items)
                     @php
                         $resources = ['customers', 'brands', 'departments', 'machine-categories', 'machines', 'machine-inventory', 'technicians', 'skills', 'amc-plans', 'service-requests', 'assignments', 'job-cards', 'work-status', 'service-reports', 'parts', 'suppliers', 'inventory', 'parts-issues', 'job-parts', 'parts-requests', 'attendance', 'leave', 'salary', 'expenses'];
+                        $items = collect($items)->filter(fn ($item) => $canSeeEverything || auth()->user()->hasPermission($item[0].'.view'))->all();
+                    @endphp
+                    @continue(empty($items))
+                    @php
                         $groupOpen = collect($items)->contains(function ($item) use ($resources) {
                             return in_array($item[0], $resources)
                                 ? request()->routeIs($item[0].'.*')
@@ -43,7 +50,13 @@
                         </div>
                     </div>
                 @endforeach
-                <div x-data="{ open: {{ request()->routeIs('users.*') || request()->routeIs('roles.*') ? 'true' : 'false' }} }" class="sidebar-group border-b-0"><button type="button" @click="open=!open" class="sidebar-group-button"><svg class="size-6 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg><span>Administration</span><svg class="ml-auto size-4 transition" :class="open && 'rotate-90'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button><div x-cloak x-show="open" x-transition class="sidebar-group-panel"><a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'nav-link-active' : '' }}"><span class="size-1.5 rounded-full {{ request()->routeIs('users.*') ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><svg class="size-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Users</span></a><a href="{{ route('roles.index') }}" class="nav-link {{ request()->routeIs('roles.*') ? 'nav-link-active' : '' }}"><span class="size-1.5 rounded-full {{ request()->routeIs('roles.*') ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><svg class="size-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg><span>Role Master</span></a></div></div>
+                @php
+                    $canSeeUsers = $canSeeEverything || auth()->user()->hasPermission('users.view');
+                    $canSeeRoles = $canSeeEverything || auth()->user()->hasPermission('roles.view');
+                @endphp
+                @if($canSeeUsers || $canSeeRoles)
+                <div x-data="{ open: {{ request()->routeIs('users.*') || request()->routeIs('roles.*') ? 'true' : 'false' }} }" class="sidebar-group border-b-0"><button type="button" @click="open=!open" class="sidebar-group-button"><svg class="size-6 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg><span>Administration</span><svg class="ml-auto size-4 transition" :class="open && 'rotate-90'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button><div x-cloak x-show="open" x-transition class="sidebar-group-panel">@if($canSeeUsers)<a href="{{ route('users.index') }}" class="nav-link {{ request()->routeIs('users.*') ? 'nav-link-active' : '' }}"><span class="size-1.5 rounded-full {{ request()->routeIs('users.*') ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><svg class="size-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><span>Users</span></a>@endif @if($canSeeRoles)<a href="{{ route('roles.index') }}" class="nav-link {{ request()->routeIs('roles.*') ? 'nav-link-active' : '' }}"><span class="size-1.5 rounded-full {{ request()->routeIs('roles.*') ? 'bg-cyan-400' : 'bg-slate-700' }}"></span><svg class="size-5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg><span>Role Master</span></a>@endif</div></div>
+                @endif
             </div>
         </nav>
     </aside>

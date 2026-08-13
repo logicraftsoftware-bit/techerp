@@ -2,7 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -33,10 +36,42 @@ class DashboardTest extends TestCase
 
     public function test_active_resource_keeps_parent_sidebar_group_open(): void
     {
-        $this->actingAs(User::factory()->create())
+        $this->seed(RolePermissionSeeder::class);
+        $user = User::factory()->create();
+        $user->roles()->attach(Role::where('slug', 'super-admin')->firstOrFail());
+
+        $this->actingAs($user)
             ->get(route('machines.index'))
             ->assertOk()
             ->assertSee('x-data="{ open: true }"', false);
+    }
+
+    public function test_sidebar_only_shows_menus_the_user_has_view_permission_for(): void
+    {
+        $this->seed(RolePermissionSeeder::class);
+        $user = User::factory()->create();
+        $user->permissions()->attach(Permission::where('slug', 'customers.view')->firstOrFail());
+
+        $this->actingAs($user)->get('/dashboard')
+            ->assertOk()
+            ->assertSee('href="'.route('customers.index').'"', false)
+            ->assertDontSee('href="'.route('machines.index').'"', false)
+            ->assertDontSee('Parts & Inventory')
+            ->assertDontSee('href="'.route('users.index').'"', false);
+    }
+
+    public function test_route_access_is_blocked_without_the_matching_permission(): void
+    {
+        $this->seed(RolePermissionSeeder::class);
+        $user = User::factory()->create();
+
+        $this->actingAs($user)->get(route('customers.index'))->assertForbidden();
+        $this->actingAs($user)->get(route('customers.create'))->assertForbidden();
+
+        $user->permissions()->attach(Permission::where('slug', 'customers.view')->firstOrFail());
+        $user->load('permissions');
+        $this->actingAs($user)->get(route('customers.index'))->assertOk();
+        $this->actingAs($user)->get(route('customers.create'))->assertForbidden();
     }
 
     public function test_sidebar_groups_are_in_operational_order(): void

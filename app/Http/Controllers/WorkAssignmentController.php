@@ -12,6 +12,14 @@ use Illuminate\View\View;
 
 class WorkAssignmentController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:assignments,view')->only(['index', 'show']);
+        $this->middleware('permission:assignments,create')->only(['create', 'store']);
+        $this->middleware('permission:assignments,update')->only(['edit', 'update']);
+        $this->middleware('permission:assignments,delete')->only(['destroy']);
+    }
+
     public function index(Request $request): View
     {
         $records = WorkAssignment::with(['serviceRequest.customer', 'serviceRequest.machine', 'technician', 'skill'])

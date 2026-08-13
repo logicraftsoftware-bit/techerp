@@ -17,6 +17,14 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MachineController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:machines,view')->only(['index', 'show']);
+        $this->middleware('permission:machines,create')->only(['create', 'store']);
+        $this->middleware('permission:machines,update')->only(['edit', 'update']);
+        $this->middleware('permission:machines,delete')->only(['destroy']);
+    }
+
     public function index(Request $r): View
     {
         $records = Machine::with(['customer', 'machineCategory'])->when($r->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('machine_name', 'like', "%$s%")->orWhere('machine_code', 'like', "%$s%")->orWhere('model', 'like', "%$s%")))->latest()->paginate(15)->withQueryString();

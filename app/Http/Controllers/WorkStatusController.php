@@ -10,6 +10,12 @@ use Illuminate\View\View;
 
 class WorkStatusController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:work-status,view')->only(['index', 'show']);
+        $this->middleware('permission:work-status,update')->only(['update']);
+    }
+
     public function index(Request $request): View
     {
         $records = WorkAssignment::with(['serviceRequest.customer', 'technician'])->when($request->status, fn ($q, $status) => $q->where('status', $status))->latest('scheduled_date')->paginate(15)->withQueryString();

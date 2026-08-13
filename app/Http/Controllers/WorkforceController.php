@@ -14,6 +14,21 @@ use Illuminate\Validation\Rule;
 
 class WorkforceController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:attendance,view')->only(['attendance']);
+        $this->middleware('permission:attendance,create')->only(['saveAttendance']);
+        $this->middleware('permission:leave,view')->only(['leaves']);
+        $this->middleware('permission:leave,create')->only(['storeLeave']);
+        $this->middleware('permission:leave,update')->only(['updateLeave']);
+        $this->middleware('permission:salary,view')->only(['salaries']);
+        $this->middleware('permission:salary,create')->only(['generateSalaries']);
+        $this->middleware('permission:salary,update')->only(['paySalary']);
+        $this->middleware('permission:expenses,view')->only(['expenses']);
+        $this->middleware('permission:expenses,create')->only(['storeExpense']);
+        $this->middleware('permission:expenses,update')->only(['updateExpense']);
+    }
+
     public function attendance(Request $request)
     {
         $date = Carbon::parse($request->input('date', today()->toDateString()));

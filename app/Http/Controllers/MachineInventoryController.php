@@ -12,6 +12,12 @@ use Illuminate\View\View;
 
 class MachineInventoryController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:machine-inventory,view')->only(['index']);
+        $this->middleware('permission:machine-inventory,create')->only(['create', 'transact']);
+    }
+
     public function index(): View
     {
         return view('machine-inventory.index', [

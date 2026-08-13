@@ -12,6 +12,14 @@ use Illuminate\View\View;
 
 class AmcPlanController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:amc-plans,view')->only(['index']);
+        $this->middleware('permission:amc-plans,create')->only(['create', 'store']);
+        $this->middleware('permission:amc-plans,update')->only(['edit', 'update']);
+        $this->middleware('permission:amc-plans,delete')->only(['destroy']);
+    }
+
     public function index(Request $request): View
     {
         $records = AmcPlan::with(['machineCategory', 'brandMaster'])

@@ -19,6 +19,14 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TechnicianController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:technicians,view')->only(['index', 'show']);
+        $this->middleware('permission:technicians,create')->only(['create', 'store']);
+        $this->middleware('permission:technicians,update')->only(['edit', 'update']);
+        $this->middleware('permission:technicians,delete')->only(['destroy']);
+    }
+
     public function index(Request $r): View
     {
         $records = Technician::with(['manager', 'skills'])->when($r->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('name', 'like', "%$s%")->orWhere('employee_code', 'like', "%$s%")->orWhere('mobile', 'like', "%$s%")))->latest()->paginate(15)->withQueryString();

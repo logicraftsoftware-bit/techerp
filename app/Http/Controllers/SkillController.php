@@ -10,6 +10,14 @@ use Illuminate\View\View;
 
 class SkillController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:skills,view')->only(['index']);
+        $this->middleware('permission:skills,create')->only(['create', 'store']);
+        $this->middleware('permission:skills,update')->only(['edit', 'update']);
+        $this->middleware('permission:skills,delete')->only(['destroy']);
+    }
+
     public function index(Request $r): View
     {
         $records = Skill::withCount('technicians')->when($r->search, fn ($q, $s) => $q->where('name', 'like', "%$s%"))->latest()->paginate(15)->withQueryString();
@@ -46,6 +54,6 @@ class SkillController extends Controller
         abort_if($skill->technicians()->exists(), 422, 'This skill is assigned to technicians.');
         $skill->delete();
 
-        return back()->with('success','Skill deleted.');
+        return back()->with('success', 'Skill deleted.');
     }
 }
