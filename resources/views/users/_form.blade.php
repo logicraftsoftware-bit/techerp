@@ -11,7 +11,7 @@
         <div><label class="form-label">Password {{ $user->exists ? '(leave blank to keep current)' : '*' }}</label><input name="password" type="password" class="form-input" {{ $user->exists ? '' : 'required' }}></div>
         <div><label class="form-label">Confirm password</label><input name="password_confirmation" type="password" class="form-input"></div>
     </div>
-    <fieldset class="mt-7"><legend class="form-label">Assigned roles *</legend><div class="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">@foreach($roles as $role)<label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-4 hover:border-blue-300"><input type="checkbox" name="roles[]" value="{{ $role->id }}" class="mt-1 rounded" @checked(in_array($role->id, old('roles',$user->roles->pluck('id')->all())))><span><span class="block text-sm font-semibold text-slate-800">{{ $role->name }}</span><span class="text-xs text-slate-400">{{ $role->description }}</span></span></label>@endforeach</div></fieldset>
+    <div class="mt-7"><label class="form-label">Assigned role *</label><select name="roles[]" class="form-input" required><option value="">Select role</option>@foreach($roles as $role)<option value="{{ $role->id }}" @selected(in_array($role->id, old('roles',$user->roles->pluck('id')->all())))>{{ $role->name }}@if($role->description) — {{ $role->description }}@endif</option>@endforeach</select></div>
 </section>
 
 <section class="card mt-6 p-6">

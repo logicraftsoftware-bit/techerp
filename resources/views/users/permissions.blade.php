@@ -10,8 +10,11 @@
     </div>
 
     @foreach($menuGroups as $group => $items)
-        <section class="card mb-5 overflow-x-auto">
-            <h3 class="border-b border-slate-100 p-4 font-bold text-slate-900">{{ $group }}</h3>
+        <section class="card mb-5 overflow-x-auto" data-permission-section>
+            <div class="flex items-center justify-between border-b border-slate-100 p-4">
+                <h3 class="font-bold text-slate-900">{{ $group }}</h3>
+                <label class="flex cursor-pointer items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500"><input type="checkbox" class="rounded" data-select-all onchange="this.closest('[data-permission-section]').querySelectorAll('tbody input[type=checkbox]').forEach(cb => cb.checked = this.checked)"> Select All</label>
+            </div>
             <table class="w-full text-left text-sm">
                 <thead class="bg-slate-50 text-xs uppercase text-slate-500">
                     <tr>
