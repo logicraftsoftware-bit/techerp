@@ -30,6 +30,8 @@ class ServiceRequestRequest extends FormRequest
             'preferred_date' => ['nullable', 'date'],
             'preferred_time' => ['nullable', 'date_format:H:i'],
             'service_address' => ['required', 'string'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'city' => ['required', 'string', 'max:100'],
             'state' => ['required', 'string', 'max:100'],
             'pin_code' => ['required', 'string', 'max:10'],

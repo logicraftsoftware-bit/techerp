@@ -12,6 +12,8 @@
           'serialNumber' => old('serial_number', $serviceRequest->serial_number),
           'assetNumber' => old('asset_number', $serviceRequest->asset_number),
           'address' => old('service_address', $serviceRequest->service_address),
+          'latitude' => old('latitude', $serviceRequest->latitude),
+          'longitude' => old('longitude', $serviceRequest->longitude),
           'city' => old('city', $serviceRequest->city),
           'state' => old('state', $serviceRequest->state),
           'pinCode' => old('pin_code', $serviceRequest->pin_code),
@@ -46,8 +48,8 @@
 
             <div class="relative md:col-span-2" @click.outside="machineOpen = false">
                 <label class="form-label">Machine *</label><input type="hidden" name="machine_id" x-model="machineId">
-                <div class="relative"><input type="search" x-model="machineSearch" @focus="machineOpen = true" @input="machineId = ''; machineOpen = true" class="form-input pr-10" :placeholder="requestType === 'existing_service' ? 'Search this customer’s machine' : 'Search machine by code, name or model'" autocomplete="off"><button type="button" @click="machineOpen = !machineOpen" class="absolute inset-y-0 right-0 px-3 text-slate-400">⌄</button></div>
-                <div x-cloak x-show="machineOpen" class="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl"><template x-for="machine in filteredMachines" :key="machine.id"><button type="button" @click="selectMachine(machine)" class="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-blue-50"><span class="block font-medium" x-text="`${machine.machine_code} — ${machine.machine_name}`"></span><span class="text-xs text-slate-400" x-text="machine.model || ''"></span></button></template><p x-show="!filteredMachines.length" class="p-4 text-center text-sm text-slate-400" x-text="requestType === 'existing_service' && !customerId ? 'Select a customer first.' : 'No matching machine.'"></p></div>
+                <div class="relative"><input type="search" x-model="machineSearch" @focus="machineOpen = true" @input="machineId = ''; machineOpen = true" class="form-input pr-10" placeholder="Search machine by code, name or model" autocomplete="off"><button type="button" @click="machineOpen = !machineOpen" class="absolute inset-y-0 right-0 px-3 text-slate-400">⌄</button></div>
+                <div x-cloak x-show="machineOpen" class="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl"><template x-for="machine in filteredMachines" :key="machine.id"><button type="button" @click="selectMachine(machine)" class="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-blue-50"><span class="block font-medium" x-text="`${machine.machine_code} — ${machine.machine_name}`"></span><span class="text-xs text-slate-400" x-text="machine.model || ''"></span></button></template><p x-show="!filteredMachines.length" class="p-4 text-center text-sm text-slate-400">No matching machine.</p></div>
             </div>
 
             <div><label class="form-label">Product Category</label><input :value="selectedMachine?.machine_category?.category_name || '—'" class="form-input bg-slate-50" readonly></div>
@@ -78,6 +80,7 @@
             <div><label class="form-label">Preferred Date</label><input type="date" name="preferred_date" value="{{ old('preferred_date', $serviceRequest->preferred_date?->format('Y-m-d')) }}" class="form-input"></div>
             <div><label class="form-label">Preferred Time</label><input type="time" name="preferred_time" value="{{ old('preferred_time', $serviceRequest->preferred_time) }}" class="form-input"></div>
             <div class="md:col-span-2"><label class="form-label">Service Address *</label><textarea name="service_address" x-model="address" rows="2" class="form-input" required></textarea><p class="mt-1 text-xs text-slate-400">Prefilled from customer; editable for this request.</p></div>
+            <div class="md:col-span-2"><div class="mb-2 flex flex-col justify-between gap-2 sm:flex-row sm:items-end"><div><label class="form-label">Service Location</label><p class="text-xs text-slate-400">Defaults to the customer's saved location; search the address or click the map to move the pin.</p></div><div class="flex gap-2"><button type="button" id="sr-find-address" class="btn-secondary">Find Address</button><button type="button" id="sr-current-location" class="btn-secondary">Use Current Location</button></div></div><input type="hidden" id="sr-latitude" name="latitude" x-model="latitude"><input type="hidden" id="sr-longitude" name="longitude" x-model="longitude"><div id="sr-map" class="h-96 w-full rounded-2xl border border-slate-200 bg-slate-100"><div class="grid h-full place-items-center p-6 text-center text-sm text-slate-500">Loading Google Map…</div></div><p id="sr-map-coordinates" class="mt-2 text-xs text-slate-400"></p></div>
             <div><label class="form-label">City *</label><input name="city" x-model="city" class="form-input" required></div>
             <div><label class="form-label">State *</label><input name="state" x-model="state" class="form-input" required></div>
             <div><label class="form-label">PIN Code *</label><input name="pin_code" x-model="pinCode" class="form-input" maxlength="10" required></div>
@@ -98,7 +101,8 @@ function serviceRequestForm(customers, machines, amcPlans, initial) {
         machineId: initial.machineId ? String(initial.machineId) : '', machineSearch: '', machineOpen: false,
         selectedAmcPlanIds: Array.from(initial.amcPlanIds || [], String), amcSearch: '',
         phone: initial.phone || '', serialNumber: initial.serialNumber || '', assetNumber: initial.assetNumber || '',
-        address: initial.address || '', city: initial.city || '', state: initial.state || '', pinCode: initial.pinCode || '',
+        address: initial.address || '', latitude: initial.latitude || '', longitude: initial.longitude || '',
+        city: initial.city || '', state: initial.state || '', pinCode: initial.pinCode || '',
         init() {
             const customer = this.customers.find(item => String(item.id) === this.customerId);
             const machine = this.machines.find(item => String(item.id) === this.machineId);
@@ -109,14 +113,9 @@ function serviceRequestForm(customers, machines, amcPlans, initial) {
             const term = this.customerSearch.toLowerCase().trim();
             return this.customers.filter(item => !term || `${item.customer_name} ${item.customer_code} ${item.mobile}`.toLowerCase().includes(term));
         },
-        get availableMachines() {
-            if (this.requestType === 'new_installation') return this.machines;
-            if (!this.customerId) return [];
-            return this.machines.filter(item => String(item.customer_id) === this.customerId);
-        },
         get filteredMachines() {
             const term = this.machineSearch.toLowerCase().trim();
-            return this.availableMachines.filter(item => !term || `${item.machine_code} ${item.machine_name} ${item.model || ''}`.toLowerCase().includes(term));
+            return this.machines.filter(item => !term || `${item.machine_code} ${item.machine_name} ${item.model || ''}`.toLowerCase().includes(term));
         },
         get selectedMachine() { return this.machines.find(item => String(item.id) === this.machineId); },
         get filteredAmcPlans() {
@@ -126,7 +125,8 @@ function serviceRequestForm(customers, machines, amcPlans, initial) {
         selectCustomer(customer) {
             this.customerId = String(customer.id); this.customerSearch = `${customer.customer_name} · ${customer.customer_code} · ${customer.mobile}`; this.customerOpen = false;
             this.phone = customer.mobile || ''; this.address = customer.address || ''; this.city = customer.city || ''; this.state = customer.state || ''; this.pinCode = customer.pin_code || '';
-            if (this.requestType === 'existing_service') { this.machineId = ''; this.machineSearch = ''; }
+            this.latitude = customer.latitude || ''; this.longitude = customer.longitude || '';
+            if (window.recenterServiceRequestMap) window.recenterServiceRequestMap(this.latitude, this.longitude);
         },
         selectMachine(machine) {
             this.machineId = String(machine.id); this.machineSearch = `${machine.machine_code} — ${machine.machine_name}${machine.model ? ' · '+machine.model : ''}`; this.machineOpen = false;
@@ -134,5 +134,28 @@ function serviceRequestForm(customers, machines, amcPlans, initial) {
         requestTypeChanged() { this.machineId = ''; this.machineSearch = ''; }
     }
 }
+
+window.initServiceRequestMap = function () {
+    const latInput = document.getElementById('sr-latitude');
+    const lngInput = document.getElementById('sr-longitude');
+    const coordinates = document.getElementById('sr-map-coordinates');
+    const existing = latInput.value && lngInput.value;
+    const initial = existing ? {lat: Number(latInput.value), lng: Number(lngInput.value)} : {lat: 20.5937, lng: 78.9629};
+    const map = new google.maps.Map(document.getElementById('sr-map'), {center: initial, zoom: existing ? 16 : 5, streetViewControl: false, mapTypeControl: true});
+    const marker = new google.maps.Marker({position: initial, map, draggable: true, visible: Boolean(existing)});
+    const geocoder = new google.maps.Geocoder();
+    const setLocation = (lat, lng) => { lat = Number(Number(lat).toFixed(7)); lng = Number(Number(lng).toFixed(7)); latInput.value = lat; lngInput.value = lng; marker.setPosition({lat, lng}); marker.setVisible(true); map.panTo({lat, lng}); coordinates.textContent = `Selected location: ${lat}, ${lng}`; };
+    map.addListener('click', event => setLocation(event.latLng.lat(), event.latLng.lng()));
+    marker.addListener('dragend', event => setLocation(event.latLng.lat(), event.latLng.lng()));
+    document.getElementById('sr-find-address').addEventListener('click', () => { const parts = ['service_address', 'city', 'state', 'pin_code'].map(name => document.querySelector(`[name="${name}"]`)?.value).filter(Boolean); if (!parts.length) return alert('Enter the address first.'); geocoder.geocode({address: parts.join(', ')}, (results, status) => { if (status === 'OK' && results[0]) { setLocation(results[0].geometry.location.lat(), results[0].geometry.location.lng()); map.setZoom(17); } else alert('Google Maps could not find this address. Place the pin manually.'); }); });
+    document.getElementById('sr-current-location').addEventListener('click', () => { if (!navigator.geolocation) return alert('Location is not supported by this browser.'); navigator.geolocation.getCurrentPosition(position => { setLocation(position.coords.latitude, position.coords.longitude); map.setZoom(17); }, () => alert('Location permission was denied.')); });
+    if (existing) coordinates.textContent = `Selected location: ${latInput.value}, ${lngInput.value}`;
+    window.recenterServiceRequestMap = (lat, lng) => { if (!lat || !lng) return; setLocation(lat, lng); map.setZoom(16); };
+};
 </script>
+@if(config('services.google_maps.key'))
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ urlencode(config('services.google_maps.key')) }}&callback=initServiceRequestMap"></script>
+@else
+<script>document.getElementById('sr-map').innerHTML='<div class="grid h-full place-items-center p-6 text-center text-sm text-amber-700">Google Maps API key is not configured. Add GOOGLE_MAPS_API_KEY to the server .env.</div>';</script>
+@endif
 @endpush

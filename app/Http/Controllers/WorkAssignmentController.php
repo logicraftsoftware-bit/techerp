@@ -71,7 +71,15 @@ class WorkAssignmentController extends Controller
     {
         return view('work-assignments.form', [
             'assignment' => $assignment,
-            'requests' => ServiceRequest::with(['customer', 'machine'])->whereNotIn('status', ['completed', 'cancelled'])->latest()->get(),
+            'requests' => ServiceRequest::with(['customer', 'machine'])
+                ->whereNotIn('status', ['completed', 'cancelled'])
+                ->where(function ($query) use ($assignment): void {
+                    $query->whereDoesntHave('workAssignments', fn ($q) => $q->where('status', '!=', 'cancelled'));
+                    if ($assignment->exists) {
+                        $query->orWhere('id', $assignment->service_request_id);
+                    }
+                })
+                ->latest()->get(),
             'technicians' => Technician::with('skills')->where('status', 'active')->orderBy('name')->get(),
         ]);
     }

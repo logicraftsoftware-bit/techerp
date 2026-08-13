@@ -78,18 +78,22 @@ class ServiceRequestTest extends TestCase
         $this->assertSame(0, $machine->fresh()->total_stock);
     }
 
-    public function test_existing_service_requires_machine_belonging_to_customer(): void
+    public function test_existing_service_allows_any_active_catalog_machine(): void
     {
+        // Machine Master no longer tracks which customer a unit belongs to (it's catalog
+        // stock, not a per-installation record), so Existing Machine Service must be able
+        // to pick any active machine — it does not require machine.customer_id to match.
         $customer = $this->customer('Acme');
         $otherCustomer = $this->customer('Other');
-        $machine = Machine::create(['customer_id' => $customer->id, 'machine_name' => 'Press', 'machine_code' => 'PR123456', 'status' => 'active']);
+        $machine = Machine::create(['machine_name' => 'Press', 'machine_code' => 'PR123456', 'status' => 'active']);
         $data = $this->baseData($customer) + ['request_type' => 'existing_service', 'service_type' => 'amc', 'machine_id' => $machine->id];
 
         $this->post(route('service-requests.store'), $data)->assertRedirect(route('service-requests.index'));
         $this->assertDatabaseHas('service_requests', ['customer_id' => $customer->id, 'machine_id' => $machine->id, 'service_type' => 'amc']);
 
         $this->post(route('service-requests.store'), [...$data, 'customer_id' => $otherCustomer->id])
-            ->assertSessionHasErrors('machine_id');
+            ->assertRedirect(route('service-requests.index'));
+        $this->assertDatabaseHas('service_requests', ['customer_id' => $otherCustomer->id, 'machine_id' => $machine->id, 'service_type' => 'amc']);
     }
 
     public function test_service_request_form_has_searchable_customer_machine_and_read_only_product_fields(): void
@@ -99,6 +103,15 @@ class ServiceRequestTest extends TestCase
             ->assertSee('Search machine by code, name or model')
             ->assertSee('Product Category')
             ->assertSee('select multiple if required');
+    }
+
+    public function test_service_request_form_includes_location_map(): void
+    {
+        $this->get(route('service-requests.create'))->assertOk()
+            ->assertSee('Service Location')
+            ->assertSee('id="sr-map"', false)
+            ->assertSee('name="latitude"', false)
+            ->assertSee('name="longitude"', false);
     }
 
     private function customer(string $name): Customer

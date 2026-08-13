@@ -115,11 +115,7 @@ class ServiceRequestController extends Controller
         $data = $request->safe()->except('amc_plan_ids');
         $machine = Machine::with(['machineCategory', 'brandMaster'])->findOrFail($data['machine_id']);
 
-        if ($data['request_type'] === 'existing_service') {
-            if ((int) $machine->customer_id !== (int) $data['customer_id']) {
-                throw ValidationException::withMessages(['machine_id' => 'The selected machine does not belong to this customer.']);
-            }
-        } else {
+        if ($data['request_type'] !== 'existing_service') {
             $data['service_type'] = 'installation';
         }
 
