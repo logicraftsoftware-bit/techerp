@@ -9,6 +9,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('attendances', function (Blueprint $table) {
+            // MySQL is using the composite unique index below as the sole supporting
+            // index for the technician_id foreign key -- give it a plain index to fall
+            // back on first, or the dropUnique() fails with "needed in a foreign key
+            // constraint" (error 1553).
+            $table->index('technician_id', 'attendances_technician_id_index');
             $table->dropUnique(['technician_id', 'attendance_date']);
             $table->foreignId('technician_id')->nullable()->change();
             $table->foreignId('user_id')->nullable()->after('technician_id')->constrained()->cascadeOnDelete();
@@ -19,6 +24,7 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->after('technician_id')->constrained()->cascadeOnDelete();
         });
         Schema::table('salary_records', function (Blueprint $table) {
+            $table->index('technician_id', 'salary_records_technician_id_index');
             $table->dropUnique(['technician_id', 'salary_month']);
             $table->foreignId('technician_id')->nullable()->change();
             $table->foreignId('user_id')->nullable()->after('technician_id')->constrained()->cascadeOnDelete();
@@ -36,6 +42,7 @@ return new class extends Migration
             $table->dropUnique(['technician_id', 'user_id', 'attendance_date']);
             $table->dropConstrainedForeignId('user_id');
             $table->unique(['technician_id', 'attendance_date']);
+            $table->dropIndex('attendances_technician_id_index');
         });
         Schema::table('technician_leaves', function (Blueprint $table) {
             $table->dropConstrainedForeignId('user_id');
@@ -44,6 +51,7 @@ return new class extends Migration
             $table->dropUnique(['technician_id', 'user_id', 'salary_month']);
             $table->dropConstrainedForeignId('user_id');
             $table->unique(['technician_id', 'salary_month']);
+            $table->dropIndex('salary_records_technician_id_index');
         });
         Schema::table('expenses', function (Blueprint $table) {
             $table->dropConstrainedForeignId('user_id');
