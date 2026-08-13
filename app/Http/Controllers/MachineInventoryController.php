@@ -16,6 +16,12 @@ class MachineInventoryController extends Controller
     {
         return view('machine-inventory.index', [
             'records' => MachineStockTransaction::with('machine')->latest()->paginate(20),
+        ]);
+    }
+
+    public function create(): View
+    {
+        return view('machine-inventory.create', [
             'machines' => Machine::where('status', 'active')->orderBy('machine_name')->get(),
         ]);
     }
@@ -47,6 +53,6 @@ class MachineInventoryController extends Controller
             ]);
         });
 
-        return back()->with('success', 'Machine stock updated.');
+        return to_route('machine-inventory.index')->with('success', 'Machine stock updated.');
     }
 }

@@ -25,6 +25,7 @@ class MachineInventoryTest extends TestCase
     public function test_machine_inventory_page_opens(): void
     {
         $this->get(route('machine-inventory.index'))->assertOk();
+        $this->get(route('machine-inventory.create'))->assertOk();
     }
 
     public function test_stock_in_and_stock_out_update_machine_total_stock(): void

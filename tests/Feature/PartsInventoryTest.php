@@ -35,6 +35,13 @@ class PartsInventoryTest extends TestCase
         }
     }
 
+    public function test_all_parts_inventory_create_pages_open(): void
+    {
+        foreach (['parts.create', 'suppliers.create', 'inventory.create', 'parts-issues.create', 'job-parts.create', 'parts-requests.create'] as $route) {
+            $this->get(route($route))->assertOk();
+        }
+    }
+
     public function test_stock_in_issue_return_and_request_issue_update_stock(): void
     {
         $this->post(route('parts.store'), ['part_name' => 'Control Board', 'category' => 'Electrical', 'unit' => 'piece', 'purchase_price' => 100, 'selling_price' => 150, 'tax_percent' => 18, 'minimum_stock' => 2, 'warranty_months' => 12, 'status' => 'active'])->assertRedirect();

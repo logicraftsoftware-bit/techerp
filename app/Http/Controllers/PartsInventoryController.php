@@ -21,7 +21,12 @@ class PartsInventoryController extends Controller
 {
     public function parts(): View
     {
-        return view('parts-inventory.parts', ['records' => Part::latest()->paginate(15), 'brands' => Brand::orderBy('brand_name')->get()]);
+        return view('parts-inventory.parts', ['records' => Part::latest()->paginate(15)]);
+    }
+
+    public function createPart(): View
+    {
+        return view('parts-inventory.parts-create', ['brands' => Brand::orderBy('brand_name')->get()]);
     }
 
     public function savePart(Request $r): RedirectResponse
@@ -36,7 +41,7 @@ class PartsInventoryController extends Controller
             Part::create($p);
         }
 
-        return back()->with('success', 'Part saved.');
+        return to_route('parts.index')->with('success', 'Part saved.');
     }
 
     public function deletePart(Part $part): RedirectResponse
@@ -51,6 +56,11 @@ class PartsInventoryController extends Controller
         return view('parts-inventory.suppliers', ['records' => Supplier::latest()->paginate(15)]);
     }
 
+    public function createSupplier(): View
+    {
+        return view('parts-inventory.suppliers-create');
+    }
+
     public function saveSupplier(Request $r): RedirectResponse
     {
         $d = $r->validate(['id' => 'nullable|exists:suppliers,id', 'company_name' => 'required|max:150', 'contact_person' => 'nullable|max:100', 'mobile' => 'required|max:20', 'email' => 'nullable|email', 'gst_number' => 'nullable|max:30', 'pan_number' => 'nullable|max:20', 'address' => 'nullable', 'city' => 'nullable|max:100', 'state' => 'nullable|max:100', 'pin_code' => 'nullable|max:10', 'payment_terms_days' => 'required|integer|min:0', 'status' => ['required', Rule::in(['active', 'inactive'])]]);
@@ -63,7 +73,7 @@ class PartsInventoryController extends Controller
             Supplier::create($d);
         }
 
-        return back()->with('success', 'Supplier saved.');
+        return to_route('suppliers.index')->with('success', 'Supplier saved.');
     }
 
     public function deleteSupplier(Supplier $supplier): RedirectResponse
@@ -75,7 +85,12 @@ class PartsInventoryController extends Controller
 
     public function inventory(): View
     {
-        return view('parts-inventory.inventory', ['records' => InventoryTransaction::with(['part', 'supplier'])->latest()->paginate(20), 'parts' => Part::where('status', 'active')->get(), 'suppliers' => Supplier::where('status', 'active')->get()]);
+        return view('parts-inventory.inventory', ['records' => InventoryTransaction::with(['part', 'supplier'])->latest()->paginate(20)]);
+    }
+
+    public function createTransaction(): View
+    {
+        return view('parts-inventory.inventory-create', ['parts' => Part::where('status', 'active')->get(), 'suppliers' => Supplier::where('status', 'active')->get()]);
     }
 
     public function transact(Request $r): RedirectResponse
@@ -90,12 +105,17 @@ class PartsInventoryController extends Controller
             InventoryTransaction::create($d + ['quantity' => $add ? $d['quantity'] : -$d['quantity'], 'balance_after' => $balance, 'created_by' => $r->user()->id]);
         });
 
-        return back()->with('success', 'Inventory updated.');
+        return to_route('inventory.index')->with('success', 'Inventory updated.');
     }
 
     public function issues(): View
     {
-        return view('parts-inventory.issues', ['records' => PartIssue::with(['part', 'technician', 'assignment'])->latest()->paginate(15), 'parts' => Part::where('status', 'active')->get(), 'technicians' => Technician::where('status', 'active')->get(), 'assignments' => WorkAssignment::with('serviceRequest')->latest()->get()]);
+        return view('parts-inventory.issues', ['records' => PartIssue::with(['part', 'technician', 'assignment'])->latest()->paginate(15)]);
+    }
+
+    public function createIssue(): View
+    {
+        return view('parts-inventory.issues-create', ['parts' => Part::where('status', 'active')->get(), 'technicians' => Technician::where('status', 'active')->get(), 'assignments' => WorkAssignment::with('serviceRequest')->latest()->get()]);
     }
 
     public function issue(Request $r): RedirectResponse
@@ -108,7 +128,7 @@ class PartsInventoryController extends Controller
             PartIssue::create($d + ['issue_code' => 'PI-'.str_pad((string) (PartIssue::count() + 1), 5, '0', STR_PAD_LEFT)]);
         });
 
-        return back()->with('success', 'Part issued.');
+        return to_route('parts-issues.index')->with('success', 'Part issued.');
     }
 
     public function updateIssue(Request $r, PartIssue $partIssue): RedirectResponse
@@ -128,7 +148,12 @@ class PartsInventoryController extends Controller
 
     public function jobParts(): View
     {
-        return view('parts-inventory.job-parts', ['records' => JobPart::with(['part', 'assignment'])->latest()->paginate(15), 'parts' => Part::where('status', 'active')->get(), 'assignments' => WorkAssignment::with('serviceRequest')->latest()->get()]);
+        return view('parts-inventory.job-parts', ['records' => JobPart::with(['part', 'assignment'])->latest()->paginate(15)]);
+    }
+
+    public function createJobPart(): View
+    {
+        return view('parts-inventory.job-parts-create', ['parts' => Part::where('status', 'active')->get(), 'assignments' => WorkAssignment::with('serviceRequest')->latest()->get()]);
     }
 
     public function usePart(Request $r): RedirectResponse
@@ -141,12 +166,17 @@ class PartsInventoryController extends Controller
             JobPart::create($d);
         });
 
-        return back()->with('success', 'Job consumption saved.');
+        return to_route('job-parts.index')->with('success', 'Job consumption saved.');
     }
 
     public function requests(): View
     {
-        return view('parts-inventory.requests', ['records' => PartRequest::with(['part', 'technician', 'assignment'])->latest()->paginate(15), 'parts' => Part::where('status', 'active')->get(), 'technicians' => Technician::where('status', 'active')->get(), 'assignments' => WorkAssignment::latest()->get()]);
+        return view('parts-inventory.requests', ['records' => PartRequest::with(['part', 'technician', 'assignment'])->latest()->paginate(15)]);
+    }
+
+    public function createRequest(): View
+    {
+        return view('parts-inventory.requests-create', ['parts' => Part::where('status', 'active')->get(), 'technicians' => Technician::where('status', 'active')->get(), 'assignments' => WorkAssignment::latest()->get()]);
     }
 
     public function requestPart(Request $r): RedirectResponse
@@ -154,7 +184,7 @@ class PartsInventoryController extends Controller
         $d = $r->validate(['technician_id' => 'required|exists:technicians,id', 'work_assignment_id' => 'nullable|exists:work_assignments,id', 'part_id' => 'required|exists:parts,id', 'quantity' => 'required|integer|min:1', 'urgency' => ['required', Rule::in(['normal', 'high', 'urgent'])], 'reason' => 'nullable']);
         PartRequest::create($d + ['request_code' => 'PRQ-'.str_pad((string) (PartRequest::count() + 1), 5, '0', STR_PAD_LEFT)]);
 
-        return back()->with('success', 'Part request created.');
+        return to_route('parts-requests.index')->with('success', 'Part request created.');
     }
 
     public function actionRequest(Request $r, PartRequest $partRequest): RedirectResponse
