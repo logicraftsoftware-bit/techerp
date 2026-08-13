@@ -87,6 +87,29 @@ class MasterDataTest extends TestCase
         $this->assertDatabaseMissing('brands', ['id' => $brand->id]);
     }
 
+    public function test_role_master_crud_and_system_role_guard(): void
+    {
+        $this->post(route('roles.store'), ['name' => 'Field Coordinator'])
+            ->assertRedirect(route('roles.index'));
+        $role = Role::where('name', 'Field Coordinator')->firstOrFail();
+        $this->assertSame('field-coordinator', $role->slug);
+        $this->assertFalse($role->is_system);
+
+        $this->get(route('roles.index'))->assertOk()->assertSee('Field Coordinator');
+        $this->put(route('roles.update', $role), ['name' => 'Regional Coordinator'])
+            ->assertRedirect(route('roles.index'));
+        $this->assertDatabaseHas('roles', ['id' => $role->id, 'name' => 'Regional Coordinator']);
+
+        $this->delete(route('roles.destroy', $role))->assertRedirect();
+        $this->assertDatabaseMissing('roles', ['id' => $role->id]);
+
+        $systemRole = Role::where('slug', 'manager')->firstOrFail();
+        $this->get(route('roles.edit', $systemRole))->assertNotFound();
+        $this->put(route('roles.update', $systemRole), ['name' => 'Renamed Manager'])->assertStatus(422);
+        $this->delete(route('roles.destroy', $systemRole))->assertStatus(422);
+        $this->assertDatabaseHas('roles', ['id' => $systemRole->id, 'name' => 'Manager']);
+    }
+
     public function test_department_crud(): void
     {
         $this->post(route('departments.store'), ['department_name' => 'Service'])

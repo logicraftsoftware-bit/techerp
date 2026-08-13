@@ -13,6 +13,7 @@ use App\Http\Controllers\MachineInventoryController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\PartsInventoryController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ServiceReportController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\SkillController;
@@ -91,4 +92,5 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::put('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
     Route::patch('/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
     Route::resource('users', UserController::class);
+    Route::resource('roles', RoleController::class)->except('show');
 });
