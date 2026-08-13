@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -26,5 +27,15 @@ class UserRequest extends FormRequest
             'roles.*' => ['integer', Rule::exists('roles', 'id')->where('is_active', true)],
             'is_active' => ['nullable', 'boolean'],
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator): void {
+            $superAdminId = Role::where('slug', 'super-admin')->value('id');
+            if ($superAdminId && in_array($superAdminId, $this->input('roles', []))) {
+                $validator->errors()->add('roles', 'Super Admin cannot be assigned from the CRM.');
+            }
+        });
     }
 }

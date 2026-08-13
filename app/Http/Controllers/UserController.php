@@ -20,7 +20,8 @@ class UserController extends Controller
 
     public function index(Request $request): View
     {
-        $users = User::with('roles')->when($request->filled('search'), fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$request->search.'%')->orWhere('email', 'like', '%'.$request->search.'%')))
+        $users = User::with('roles')->whereDoesntHave('roles', fn ($q) => $q->where('slug', 'super-admin'))
+            ->when($request->filled('search'), fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$request->search.'%')->orWhere('email', 'like', '%'.$request->search.'%')))
             ->when($request->filled('status'), fn ($q) => $q->where('is_active', $request->status === 'active'))
             ->latest()->paginate(12)->withQueryString();
 
@@ -29,7 +30,7 @@ class UserController extends Controller
 
     public function create(): View
     {
-        return view('users.create', ['user' => new User, 'roles' => Role::where('is_active', true)->get()]);
+        return view('users.create', ['user' => new User, 'roles' => Role::where('is_active', true)->where('slug', '!=', 'super-admin')->get()]);
     }
 
     public function store(UserRequest $request): RedirectResponse
@@ -44,16 +45,22 @@ class UserController extends Controller
 
     public function show(User $user): View
     {
+        abort_if($user->hasRole('super-admin'), 404);
+
         return view('users.show', ['user' => $user->load('roles.permissions')]);
     }
 
     public function edit(User $user): View
     {
-        return view('users.edit', ['user' => $user, 'roles' => Role::where('is_active', true)->get()]);
+        abort_if($user->hasRole('super-admin'), 404);
+
+        return view('users.edit', ['user' => $user, 'roles' => Role::where('is_active', true)->where('slug', '!=', 'super-admin')->get()]);
     }
 
     public function update(UserRequest $request, User $user): RedirectResponse
     {
+        abort_if($user->hasRole('super-admin'), 404);
+
         DB::transaction(function () use ($request, $user) {
             $data = $request->safe()->except('roles', 'password');
             if ($request->filled('password')) {
@@ -69,6 +76,7 @@ class UserController extends Controller
 
     public function destroy(User $user): RedirectResponse
     {
+        abort_if($user->hasRole('super-admin'), 404);
         abort_if($user->is(auth()->user()), 422, 'You cannot delete your own account.');
         $user->delete();
 
@@ -78,6 +86,7 @@ class UserController extends Controller
     public function toggle(User $user): JsonResponse
     {
         $this->authorize('update', $user);
+        abort_if($user->hasRole('super-admin'), 404);
         abort_if($user->is(auth()->user()), 422, 'You cannot deactivate your own account.');
         $user->update(['is_active' => ! $user->is_active]);
 
