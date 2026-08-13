@@ -35,6 +35,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Role::class);
     }
 
+    public function permissions(): BelongsToMany
+    {
+        return $this->belongsToMany(Permission::class);
+    }
+
     public function hasRole(string ...$roles): bool
     {
         return $this->roles->contains(fn (Role $role) => in_array($role->slug, $roles, true));
@@ -42,9 +47,7 @@ class User extends Authenticatable
 
     public function hasPermission(string $permission): bool
     {
-        return $this->hasRole('super-admin') || $this->roles->contains(
-            fn (Role $role) => $role->permissions->contains('slug', $permission)
-        );
+        return $this->hasRole('super-admin') || $this->permissions->contains('slug', $permission);
     }
 
     /**

@@ -19,6 +19,7 @@ use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\SkillController;
 use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserPermissionController;
 use App\Http\Controllers\WorkAssignmentController;
 use App\Http\Controllers\WorkforceController;
 use App\Http\Controllers\WorkStatusController;
@@ -91,6 +92,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
     Route::patch('/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
+    Route::get('/users/{user}/permissions', [UserPermissionController::class, 'edit'])->name('users.permissions.edit');
+    Route::put('/users/{user}/permissions', [UserPermissionController::class, 'update'])->name('users.permissions.update');
     Route::resource('users', UserController::class);
     Route::resource('roles', RoleController::class)->except('show');
 });
