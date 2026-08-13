@@ -14,6 +14,7 @@ use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\PartsInventoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SelfAttendanceController;
 use App\Http\Controllers\ServiceReportController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\SkillController;
@@ -33,6 +34,9 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/my-attendance', [SelfAttendanceController::class, 'show'])->name('my-attendance.show');
+    Route::post('/my-attendance/check-in', [SelfAttendanceController::class, 'checkIn'])->name('my-attendance.check-in');
+    Route::post('/my-attendance/check-out', [SelfAttendanceController::class, 'checkOut'])->name('my-attendance.check-out');
     Route::get('/modules/{module}', ModuleController::class)->name('modules.show');
     Route::get('/machine-documents/{document}', [MachineController::class, 'document'])->name('machine-documents.show');
     Route::delete('/machine-documents/{document}', [MachineController::class, 'destroyDocument'])->name('machine-documents.destroy');

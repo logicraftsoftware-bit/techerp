@@ -23,6 +23,9 @@
                 @php
                     $canSeeEverything = auth()->user()->hasRole('super-admin');
                 @endphp
+                @unless($canSeeEverything)
+                    <a href="{{ route('my-attendance.show') }}" class="nav-link mb-3 py-3.5 {{ request()->routeIs('my-attendance.*') ? 'nav-link-active' : '' }}"><svg class="size-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><span class="text-base">My Attendance</span></a>
+                @endunless
                 @foreach(config('crm.navigation') as $group => $items)
                     @php
                         $resources = ['customers', 'brands', 'departments', 'machine-categories', 'machines', 'machine-inventory', 'technicians', 'skills', 'amc-plans', 'service-requests', 'assignments', 'job-cards', 'work-status', 'service-reports', 'parts', 'suppliers', 'inventory', 'parts-issues', 'job-parts', 'parts-requests', 'attendance', 'leave', 'salary', 'expenses'];
