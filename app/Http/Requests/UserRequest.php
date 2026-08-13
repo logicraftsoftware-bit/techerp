@@ -26,6 +26,32 @@ class UserRequest extends FormRequest
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => ['integer', Rule::exists('roles', 'id')->where('is_active', true)],
             'is_active' => ['nullable', 'boolean'],
+
+            'avatar' => ['nullable', 'file', 'mimetypes:image/*', 'max:4096'],
+            'gender' => ['required', Rule::in(['male', 'female', 'other'])],
+            'date_of_birth' => ['nullable', 'date', 'before:today'],
+            'emergency_contact' => ['nullable', 'max:20'],
+            'address' => ['nullable'],
+            'city' => ['nullable', 'max:100'],
+            'state' => ['nullable', 'max:100'],
+            'pin_code' => ['nullable', 'max:10'],
+
+            'joining_date' => ['required', 'date'],
+            'department_id' => ['nullable', 'exists:departments,id'],
+            'designation' => ['nullable', 'max:100'],
+            'reporting_manager_id' => ['nullable', 'integer', 'exists:users,id'],
+            'employment_type' => ['required', Rule::in(['full_time', 'part_time', 'contract'])],
+            'employment_status' => ['required', Rule::in(['active', 'inactive', 'terminated'])],
+
+            'salary_type' => ['required', Rule::in(['monthly', 'daily'])],
+            'monthly_salary' => ['nullable', 'required_if:salary_type,monthly', 'numeric', 'min:0'],
+            'daily_salary' => ['nullable', 'required_if:salary_type,daily', 'numeric', 'min:0'],
+            'overtime_rate' => ['nullable', 'numeric', 'min:0'],
+            'travel_allowance' => ['nullable', 'numeric', 'min:0'],
+            'food_allowance' => ['nullable', 'numeric', 'min:0'],
+            'other_allowance' => ['nullable', 'numeric', 'min:0'],
+            'pf' => ['nullable', 'numeric', 'min:0'],
+            'esi' => ['nullable', 'numeric', 'min:0'],
         ];
     }
 
@@ -35,6 +61,11 @@ class UserRequest extends FormRequest
             $superAdminId = Role::where('slug', 'super-admin')->value('id');
             if ($superAdminId && in_array($superAdminId, $this->input('roles', []))) {
                 $validator->errors()->add('roles', 'Super Admin cannot be assigned from the CRM.');
+            }
+
+            $userId = $this->route('user')?->id;
+            if ($userId && (int) $this->input('reporting_manager_id') === $userId) {
+                $validator->errors()->add('reporting_manager_id', 'A user cannot report to themselves.');
             }
         });
     }

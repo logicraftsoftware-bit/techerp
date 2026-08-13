@@ -36,15 +36,26 @@ class UserManagementTest extends TestCase
         return $user;
     }
 
+    // Users now carry a Technician-like employee profile (see [[user-employee-profile]]),
+    // so gender/joining_date/employment_type/employment_status/salary_type are required
+    // on every create/update submission.
+    private function baseUserData(): array
+    {
+        return ['gender' => 'male', 'joining_date' => '2026-01-01', 'employment_type' => 'full_time', 'employment_status' => 'active', 'salary_type' => 'monthly', 'monthly_salary' => 30000];
+    }
+
     public function test_super_admin_can_create_user_with_role(): void
     {
         $role = Role::where('slug', 'manager')->firstOrFail();
-        $this->actingAs($this->admin())->post('/users', [
+        $this->actingAs($this->admin())->post('/users', $this->baseUserData() + [
             'name' => 'Service Manager', 'email' => 'manager@example.com', 'phone' => '9999999998',
             'password' => 'password123', 'password_confirmation' => 'password123', 'roles' => [$role->id], 'is_active' => '1',
         ])->assertRedirect('/users');
         $this->assertDatabaseHas('users', ['email' => 'manager@example.com', 'is_active' => true]);
-        $this->assertTrue(User::whereEmail('manager@example.com')->first()->hasRole('manager'));
+        $created = User::whereEmail('manager@example.com')->first();
+        $this->assertTrue($created->hasRole('manager'));
+        $this->assertMatchesRegularExpression('/^[A-Z]{2}\d{6}$/', $created->employee_code);
+        $this->assertSame('30000.00', $created->monthly_salary);
     }
 
     public function test_unauthorized_user_cannot_open_user_management(): void
@@ -80,7 +91,7 @@ class UserManagementTest extends TestCase
         $this->get('/users')->assertOk()->assertDontSee($admin->email);
         $this->get("/users/{$admin->id}")->assertNotFound();
         $this->get("/users/{$admin->id}/edit")->assertNotFound();
-        $this->put("/users/{$admin->id}", ['name' => 'Renamed', 'email' => $admin->email, 'roles' => [Role::where('slug', 'manager')->value('id')], 'is_active' => '1'])->assertNotFound();
+        $this->put("/users/{$admin->id}", $this->baseUserData() + ['name' => 'Renamed', 'email' => $admin->email, 'roles' => [Role::where('slug', 'manager')->value('id')], 'is_active' => '1'])->assertNotFound();
         $this->delete("/users/{$admin->id}")->assertNotFound();
 
         // Switch to a plain, directly-permitted actor for the checkbox-list check, since
@@ -91,7 +102,7 @@ class UserManagementTest extends TestCase
 
         $role = Role::where('slug', 'manager')->firstOrFail();
         $superAdminRole = Role::where('slug', 'super-admin')->firstOrFail();
-        $this->actingAs($plainAdmin)->post('/users', [
+        $this->actingAs($plainAdmin)->post('/users', $this->baseUserData() + [
             'name' => 'Sneaky', 'email' => 'sneaky@example.com', 'phone' => '9999999997',
             'password' => 'password123', 'password_confirmation' => 'password123',
             'roles' => [$role->id, $superAdminRole->id], 'is_active' => '1',

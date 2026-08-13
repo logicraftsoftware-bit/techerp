@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UserRequest;
+use App\Models\Department;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -30,13 +31,17 @@ class UserController extends Controller
 
     public function create(): View
     {
-        return view('users.create', ['user' => new User, 'roles' => Role::where('is_active', true)->where('slug', '!=', 'super-admin')->get()]);
+        return $this->form(new User);
     }
 
     public function store(UserRequest $request): RedirectResponse
     {
         DB::transaction(function () use ($request) {
-            $user = User::create($request->safe()->except('roles') + ['is_active' => $request->boolean('is_active')]);
+            $data = $this->data($request);
+            if ($request->hasFile('avatar')) {
+                $data['avatar'] = $request->file('avatar')->store('users', 'public');
+            }
+            $user = User::create($data);
             $user->roles()->sync($request->validated('roles'));
         });
 
@@ -47,14 +52,14 @@ class UserController extends Controller
     {
         abort_if($user->hasRole('super-admin'), 404);
 
-        return view('users.show', ['user' => $user->load('roles.permissions')]);
+        return view('users.show', ['user' => $user->load(['roles', 'permissions', 'departmentMaster', 'manager'])]);
     }
 
     public function edit(User $user): View
     {
         abort_if($user->hasRole('super-admin'), 404);
 
-        return view('users.edit', ['user' => $user, 'roles' => Role::where('is_active', true)->where('slug', '!=', 'super-admin')->get()]);
+        return $this->form($user);
     }
 
     public function update(UserRequest $request, User $user): RedirectResponse
@@ -62,11 +67,13 @@ class UserController extends Controller
         abort_if($user->hasRole('super-admin'), 404);
 
         DB::transaction(function () use ($request, $user) {
-            $data = $request->safe()->except('roles', 'password');
-            if ($request->filled('password')) {
-                $data['password'] = $request->password;
+            $data = $this->data($request);
+            if (! $request->filled('password')) {
+                unset($data['password']);
             }
-            $data['is_active'] = $request->boolean('is_active');
+            if ($request->hasFile('avatar')) {
+                $data['avatar'] = $request->file('avatar')->store('users', 'public');
+            }
             $user->update($data);
             $user->roles()->sync($request->validated('roles'));
         });
@@ -91,5 +98,26 @@ class UserController extends Controller
         $user->update(['is_active' => ! $user->is_active]);
 
         return response()->json(['message' => 'User status updated.', 'is_active' => $user->is_active]);
+    }
+
+    private function form(User $user): View
+    {
+        return view($user->exists ? 'users.edit' : 'users.create', [
+            'user' => $user,
+            'roles' => Role::where('is_active', true)->where('slug', '!=', 'super-admin')->get(),
+            'departments' => Department::orderBy('department_name')->get(),
+            'managers' => User::whereKeyNot($user->id)->whereDoesntHave('roles', fn ($q) => $q->where('slug', 'super-admin'))->orderBy('name')->get(),
+        ]);
+    }
+
+    private function data(UserRequest $request): array
+    {
+        $data = $request->safe()->except('roles', 'avatar');
+        $data['is_active'] = $request->boolean('is_active');
+        foreach (['monthly_salary', 'daily_salary', 'overtime_rate', 'travel_allowance', 'food_allowance', 'other_allowance', 'pf', 'esi'] as $field) {
+            $data[$field] = $data[$field] ?? 0;
+        }
+
+        return $data;
     }
 }
