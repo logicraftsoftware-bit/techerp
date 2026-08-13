@@ -18,6 +18,11 @@ class Expense extends Model
         return $this->belongsTo(Technician::class);
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function assignment()
     {
         return $this->belongsTo(WorkAssignment::class, 'work_assignment_id');

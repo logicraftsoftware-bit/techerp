@@ -17,4 +17,9 @@ class SalaryRecord extends Model
     {
         return $this->belongsTo(Technician::class);
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
