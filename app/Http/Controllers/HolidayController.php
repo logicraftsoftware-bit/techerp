@@ -20,14 +20,20 @@ class HolidayController extends Controller
     public function index(Request $request): View
     {
         $month = Carbon::parse($request->input('month', now()->format('Y-m')).'-01')->startOfMonth();
-        $holidays = Holiday::whereBetween('holiday_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
-            ->get()->keyBy(fn ($h) => $h->holiday_date->format('Y-m-d'));
+        $yearHolidays = Holiday::whereYear('holiday_date', $month->year)->orderBy('holiday_date')->get();
+        $holidays = $yearHolidays->filter(fn ($h) => $h->holiday_date->between($month->copy()->startOfMonth(), $month->copy()->endOfMonth()))
+            ->keyBy(fn ($h) => $h->holiday_date->format('Y-m-d'));
+
+        $isAdmin = $request->user()->hasRole('super-admin');
 
         return view('workforce.holidays', [
             'month' => $month,
             'holidays' => $holidays,
+            'yearHolidays' => $yearHolidays,
             'prevMonth' => $month->copy()->subMonth()->format('Y-m'),
             'nextMonth' => $month->copy()->addMonth()->format('Y-m'),
+            'canCreate' => $isAdmin || $request->user()->hasPermission('holidays.create'),
+            'canDelete' => $isAdmin || $request->user()->hasPermission('holidays.delete'),
         ]);
     }
 

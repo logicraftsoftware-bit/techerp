@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Expense;
 use App\Models\Holiday;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\SalaryRecord;
 use App\Models\Technician;
@@ -115,6 +116,22 @@ class WorkforceTest extends TestCase
 
         $this->delete(route('holidays.destroy', $holiday))->assertRedirect();
         $this->assertDatabaseMissing('holidays', ['id' => $holiday->id]);
+    }
+
+    public function test_holiday_calendar_is_view_only_for_users_without_manage_permission(): void
+    {
+        Holiday::create(['holiday_date' => '2026-08-15', 'name' => 'Independence Day']);
+
+        $viewer = User::factory()->create();
+        $viewer->permissions()->attach(Permission::where('slug', 'holidays.view')->firstOrFail());
+        $this->actingAs($viewer)->get(route('holidays.index', ['month' => '2026-08']))
+            ->assertOk()
+            ->assertSee('Independence Day')
+            ->assertDontSee('Add Holiday');
+
+        $this->post(route('holidays.store'), ['holiday_date' => '2026-08-20', 'name' => 'Blocked'])
+            ->assertForbidden();
+        $this->assertDatabaseMissing('holidays', ['name' => 'Blocked']);
     }
 
     public function test_holidays_are_excluded_from_payroll_working_days(): void
