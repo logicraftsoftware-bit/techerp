@@ -34,7 +34,7 @@ class Technician extends Model
 
     protected function casts(): array
     {
-        return ['date_of_birth' => 'date', 'joining_date' => 'date', 'monthly_salary' => 'decimal:2', 'daily_salary' => 'decimal:2', 'hourly_rate' => 'decimal:2', 'overtime_rate' => 'decimal:2'];
+        return ['date_of_birth' => 'date', 'joining_date' => 'date', 'monthly_salary' => 'decimal:2', 'daily_salary' => 'decimal:2', 'hourly_rate' => 'decimal:2', 'overtime_rate' => 'decimal:2', 'monthly_paid_leave_days' => 'integer'];
     }
 
     public function manager(): BelongsTo
@@ -60,6 +60,11 @@ class Technician extends Model
     public function skills(): BelongsToMany
     {
         return $this->belongsToMany(Skill::class)->withPivot(['skill_level', 'experience_years', 'certification', 'certification_expiry', 'remarks'])->withTimestamps();
+    }
+
+    public function commissionTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(CommissionType::class, 'commission_type_technician')->withTimestamps();
     }
 
     public function workAssignments(): HasMany

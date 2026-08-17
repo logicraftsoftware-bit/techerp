@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\CommissionType;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -47,15 +48,19 @@ class UserManagementTest extends TestCase
     public function test_super_admin_can_create_user_with_role(): void
     {
         $role = Role::where('slug', 'manager')->firstOrFail();
+        $commissionType = CommissionType::create(['type_name' => 'Referral Bonus', 'calculation_type' => 'flat', 'value' => 200]);
         $this->actingAs($this->admin())->post('/users', $this->baseUserData() + [
             'name' => 'Service Manager', 'email' => 'manager@example.com', 'phone' => '9999999998',
             'password' => 'password123', 'password_confirmation' => 'password123', 'roles' => [$role->id], 'is_active' => '1',
+            'monthly_paid_leave_days' => 2, 'commission_type_ids' => [$commissionType->id],
         ])->assertRedirect('/users');
         $this->assertDatabaseHas('users', ['email' => 'manager@example.com', 'is_active' => true]);
         $created = User::whereEmail('manager@example.com')->first();
         $this->assertTrue($created->hasRole('manager'));
         $this->assertMatchesRegularExpression('/^[A-Z]{2}\d{6}$/', $created->employee_code);
         $this->assertSame('30000.00', $created->monthly_salary);
+        $this->assertSame(2, $created->monthly_paid_leave_days);
+        $this->assertTrue($created->commissionTypes->contains($commissionType));
     }
 
     public function test_unauthorized_user_cannot_open_user_management(): void

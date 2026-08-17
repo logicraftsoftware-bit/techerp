@@ -52,6 +52,9 @@ class UserRequest extends FormRequest
             'other_allowance' => ['nullable', 'numeric', 'min:0'],
             'pf' => ['nullable', 'numeric', 'min:0'],
             'esi' => ['nullable', 'numeric', 'min:0'],
+            'monthly_paid_leave_days' => ['nullable', 'integer', 'min:0'],
+            'commission_type_ids' => ['nullable', 'array'],
+            'commission_type_ids.*' => ['integer', 'exists:commission_types,id'],
         ];
     }
 

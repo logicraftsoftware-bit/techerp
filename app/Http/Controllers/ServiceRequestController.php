@@ -8,6 +8,8 @@ use App\Models\Customer;
 use App\Models\Machine;
 use App\Models\MachineStockTransaction;
 use App\Models\ServiceRequest;
+use App\Models\Technician;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -81,7 +83,7 @@ class ServiceRequestController extends Controller
 
     public function show(ServiceRequest $serviceRequest): View
     {
-        return view('service-requests.show', ['serviceRequest' => $serviceRequest->load(['customer', 'machine', 'machineCategory', 'brand', 'creator', 'amcPlans'])]);
+        return view('service-requests.show', ['serviceRequest' => $serviceRequest->load(['customer', 'machine', 'machineCategory', 'brand', 'creator', 'amcPlans', 'referredByTechnician', 'referredByUser'])]);
     }
 
     public function edit(ServiceRequest $serviceRequest): View
@@ -115,12 +117,14 @@ class ServiceRequestController extends Controller
             'customers' => Customer::where('status', 'active')->orderBy('customer_name')->get(),
             'machines' => Machine::with(['brandMaster', 'machineCategory'])->where('status', 'active')->orderBy('machine_name')->get(),
             'amcPlans' => AmcPlan::with(['machineCategory', 'brandMaster'])->where('status', 'active')->orderBy('plan_name')->get(),
+            'technicians' => Technician::where('status', 'active')->orderBy('name')->get(),
+            'referrerUsers' => User::where('is_active', true)->whereDoesntHave('roles', fn ($q) => $q->where('slug', 'super-admin'))->orderBy('name')->get(),
         ]);
     }
 
     private function requestData(ServiceRequestRequest $request): array
     {
-        $data = $request->safe()->except('amc_plan_ids');
+        $data = $request->safe()->except('amc_plan_ids', 'referred_by');
         $machine = Machine::with(['machineCategory', 'brandMaster'])->findOrFail($data['machine_id']);
 
         if ($data['request_type'] !== 'existing_service') {
@@ -132,6 +136,17 @@ class ServiceRequestController extends Controller
         $data['product_name'] = $machine->machine_name;
         $data['model'] = $machine->model;
 
+        [$data['referred_by_technician_id'], $data['referred_by_user_id']] = $this->splitReferrer($request->validated('referred_by'));
+
         return $data;
+    }
+
+    private function splitReferrer(?string $referredBy): array
+    {
+        if (! $referredBy || ! preg_match('/^(technician|user):(\d+)$/', $referredBy, $matches)) {
+            return [null, null];
+        }
+
+        return [$matches[1] === 'technician' ? (int) $matches[2] : null, $matches[1] === 'user' ? (int) $matches[2] : null];
     }
 }

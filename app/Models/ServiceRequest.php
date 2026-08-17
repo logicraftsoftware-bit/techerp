@@ -54,6 +54,16 @@ class ServiceRequest extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function referredByTechnician(): BelongsTo
+    {
+        return $this->belongsTo(Technician::class, 'referred_by_technician_id');
+    }
+
+    public function referredByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'referred_by_user_id');
+    }
+
     public function amcPlans(): BelongsToMany
     {
         return $this->belongsToMany(AmcPlan::class)->withTimestamps();

@@ -37,6 +37,7 @@ class ServiceRequestRequest extends FormRequest
             'pin_code' => ['required', 'string', 'max:10'],
             'notes' => ['nullable', 'string'],
             'status' => ['required', Rule::in(['open', 'scheduled', 'in_progress', 'completed', 'cancelled'])],
+            'referred_by' => ['nullable', 'regex:/^(technician|user):\d+$/'],
         ];
     }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\Expense;
+use App\Models\Holiday;
 use App\Models\SalaryRecord;
 use App\Models\Technician;
 use App\Models\TechnicianLeave;
@@ -22,7 +23,8 @@ class WorkforceController extends Controller
         $this->middleware('permission:attendance,create')->only(['saveAttendance']);
         $this->middleware('permission:leave,view')->only(['leaves']);
         $this->middleware('permission:leave,create')->only(['storeLeave']);
-        $this->middleware('permission:leave,update')->only(['updateLeave']);
+        $this->middleware('permission:leave,update')->only(['updateLeave', 'editLeave', 'updateLeaveDetails']);
+        $this->middleware('permission:leave,delete')->only(['destroyLeave']);
         $this->middleware('permission:salary,view')->only(['salaries']);
         $this->middleware('permission:salary,create')->only(['generateSalaries']);
         $this->middleware('permission:salary,update')->only(['paySalary']);
@@ -75,12 +77,50 @@ class WorkforceController extends Controller
         $data = $request->validate(['status' => ['required', Rule::in(['approved', 'rejected', 'cancelled'])], 'approval_remarks' => 'nullable|max:1000']);
         $leave->update($data + ['actioned_by' => $request->user()->id, 'actioned_at' => now()]);
         if ($data['status'] === 'approved') {
-            for ($date = $leave->from_date->copy(); $date->lte($leave->to_date); $date->addDay()) {
-                Attendance::updateOrCreate(['technician_id' => $leave->technician_id, 'user_id' => $leave->user_id, 'attendance_date' => $date], ['attendance_status' => 'leave', 'marked_by' => $request->user()->id]);
-            }
+            $this->markLeaveAttendance($leave, $request->user()->id);
         }
 
         return back()->with('success', 'Leave status updated.');
+    }
+
+    public function editLeave(TechnicianLeave $leave)
+    {
+        return view('workforce.leave-edit', ['leave' => $leave, 'staff' => $this->staffList()]);
+    }
+
+    public function updateLeaveDetails(Request $request, TechnicianLeave $leave)
+    {
+        $data = $request->validate(['staff' => ['required', 'regex:/^(technician|user):\d+$/'], 'leave_type' => ['required', Rule::in(['casual', 'sick', 'earned', 'unpaid'])], 'from_date' => 'required|date', 'to_date' => 'required|date|after_or_equal:from_date', 'reason' => 'required|max:1000']);
+        [$type, $id] = $this->splitStaffKey($data['staff']);
+        unset($data['staff']);
+        $data['technician_id'] = $type === 'technician' ? $id : null;
+        $data['user_id'] = $type === 'user' ? $id : null;
+        $data['total_days'] = Carbon::parse($data['from_date'])->diffInDays(Carbon::parse($data['to_date'])) + 1;
+        $leave->update($data);
+        if ($leave->status === 'approved') {
+            $this->markLeaveAttendance($leave, $request->user()->id);
+        }
+
+        return to_route('leave.index')->with('success', 'Leave request updated.');
+    }
+
+    public function destroyLeave(Request $request, TechnicianLeave $leave)
+    {
+        if ($leave->status === 'approved') {
+            Attendance::where('technician_id', $leave->technician_id)->where('user_id', $leave->user_id)
+                ->whereBetween('attendance_date', [$leave->from_date, $leave->to_date])
+                ->where('attendance_status', 'leave')->delete();
+        }
+        $leave->delete();
+
+        return back()->with('success', 'Leave request deleted.');
+    }
+
+    private function markLeaveAttendance(TechnicianLeave $leave, int $markedBy): void
+    {
+        for ($date = $leave->from_date->copy(); $date->lte($leave->to_date); $date->addDay()) {
+            Attendance::updateOrCreate(['technician_id' => $leave->technician_id, 'user_id' => $leave->user_id, 'attendance_date' => $date], ['attendance_status' => 'leave', 'marked_by' => $markedBy]);
+        }
     }
 
     public function salaries(Request $request)
@@ -93,7 +133,8 @@ class WorkforceController extends Controller
     public function generateSalaries(Request $request)
     {
         $month = Carbon::parse($request->validate(['month' => 'required|date_format:Y-m'])['month'].'-01');
-        $workingDays = collect(range(1, $month->daysInMonth))->map(fn ($day) => $month->copy()->day($day))->filter(fn ($date) => ! $date->isSunday())->count();
+        $holidayDates = Holiday::whereBetween('holiday_date', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])->pluck('holiday_date')->map(fn ($date) => $date->format('Y-m-d'))->all();
+        $workingDays = collect(range(1, $month->daysInMonth))->map(fn ($day) => $month->copy()->day($day))->filter(fn ($date) => ! $date->isSunday() && ! in_array($date->format('Y-m-d'), $holidayDates, true))->count();
 
         foreach (Technician::where('status', 'active')->get() as $technician) {
             $this->generateSalaryRecord('technician', $technician, $month, $workingDays);

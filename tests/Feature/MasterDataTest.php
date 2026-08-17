@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\AmcPlan;
 use App\Models\Brand;
+use App\Models\CommissionType;
 use App\Models\Customer;
 use App\Models\Department;
 use App\Models\Machine;
@@ -83,10 +84,13 @@ class MasterDataTest extends TestCase
         $this->post(route('machines.store'), ['machine_name' => 'Press', 'brand_id' => $brand->id, 'machine_category_id' => $category->id, 'model' => 'P100', 'service_period' => '6_months', 'buying_price' => 10000, 'selling_price' => 12000, 'total_stock' => 5, 'location_name' => 'Main Warehouse', 'status' => 'active'])->assertRedirect(route('machines.index'));
         $this->assertMatchesRegularExpression('/^PR\d{6}$/', Machine::firstOrFail()->machine_code);
         $s = Skill::create(['name' => 'Electrical', 'category' => 'electrical', 'is_active' => true]);
-        $this->post(route('technicians.store'), ['name' => 'Tech', 'gender' => 'male', 'mobile' => '8', 'password' => 'password123', 'joining_date' => '2026-01-01', 'employment_type' => 'full_time', 'status' => 'active', 'salary_type' => 'monthly', 'monthly_salary' => 10000, 'daily_salary' => '', 'overtime_rate' => '', 'travel_allowance' => '', 'food_allowance' => '', 'other_allowance' => '', 'esi' => '', 'pf' => '', 'skills' => [$s->id]])->assertRedirect(route('technicians.index'));
+        $commissionType = CommissionType::create(['type_name' => 'Installation Bonus', 'calculation_type' => 'flat', 'value' => 500]);
+        $this->post(route('technicians.store'), ['name' => 'Tech', 'gender' => 'male', 'mobile' => '8', 'password' => 'password123', 'joining_date' => '2026-01-01', 'employment_type' => 'full_time', 'status' => 'active', 'salary_type' => 'monthly', 'monthly_salary' => 10000, 'daily_salary' => '', 'overtime_rate' => '', 'travel_allowance' => '', 'food_allowance' => '', 'other_allowance' => '', 'esi' => '', 'pf' => '', 'monthly_paid_leave_days' => 1, 'skills' => [$s->id], 'commission_type_ids' => [$commissionType->id]])->assertRedirect(route('technicians.index'));
         $this->assertMatchesRegularExpression('/^TE\d{6}$/', Technician::firstOrFail()->employee_code);
         $this->assertSame('0.00', Technician::firstOrFail()->daily_salary);
         $this->assertTrue(Technician::first()->skills->contains($s));
+        $this->assertTrue(Technician::first()->commissionTypes->contains($commissionType));
+        $this->assertSame(1, Technician::first()->monthly_paid_leave_days);
         Storage::fake('public');
         Storage::disk('public')->put('technicians/profile.png', base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='));
         $technician = Technician::firstOrFail();
@@ -121,6 +125,17 @@ class MasterDataTest extends TestCase
         $this->assertDatabaseHas('units', ['id' => $unit->id, 'unit_name' => 'Carton']);
         $this->delete(route('units.destroy', $unit))->assertRedirect();
         $this->assertDatabaseMissing('units', ['id' => $unit->id]);
+    }
+
+    public function test_commission_type_master_crud(): void
+    {
+        $this->post(route('commission-types.store'), ['type_name' => 'Installation Bonus', 'calculation_type' => 'flat', 'value' => 500])->assertRedirect(route('commission-types.index'));
+        $commissionType = CommissionType::firstOrFail();
+        $this->get(route('commission-types.index'))->assertOk()->assertSee('Installation Bonus');
+        $this->put(route('commission-types.update', $commissionType), ['type_name' => 'AMC Commission', 'calculation_type' => 'percentage', 'value' => 5])->assertRedirect(route('commission-types.index'));
+        $this->assertDatabaseHas('commission_types', ['id' => $commissionType->id, 'type_name' => 'AMC Commission', 'calculation_type' => 'percentage']);
+        $this->delete(route('commission-types.destroy', $commissionType))->assertRedirect();
+        $this->assertDatabaseMissing('commission_types', ['id' => $commissionType->id]);
     }
 
     public function test_role_master_crud_and_system_role_guard(): void

@@ -84,6 +84,8 @@
             <div><label class="form-label">City *</label><input name="city" x-model="city" class="form-input" required></div>
             <div><label class="form-label">State *</label><input name="state" x-model="state" class="form-input" required></div>
             <div><label class="form-label">PIN Code *</label><input name="pin_code" x-model="pinCode" class="form-input" maxlength="10" required></div>
+            @php $selectedReferrer = old('referred_by', $serviceRequest->referred_by_technician_id ? 'technician:'.$serviceRequest->referred_by_technician_id : ($serviceRequest->referred_by_user_id ? 'user:'.$serviceRequest->referred_by_user_id : '')); @endphp
+            <div><label class="form-label">Refer By</label><select class="form-input" name="referred_by"><option value="">None</option><optgroup label="Technicians">@foreach($technicians as $technician)<option value="technician:{{ $technician->id }}" @selected($selectedReferrer === 'technician:'.$technician->id)>{{ $technician->name }} ({{ $technician->employee_code }})</option>@endforeach</optgroup><optgroup label="Users">@foreach($referrerUsers as $referrerUser)<option value="user:{{ $referrerUser->id }}" @selected($selectedReferrer === 'user:'.$referrerUser->id)>{{ $referrerUser->name }}</option>@endforeach</optgroup></select></div>
             <div class="md:col-span-2"><label class="form-label">Internal Notes</label><textarea name="notes" rows="3" class="form-input">{{ old('notes', $serviceRequest->notes) }}</textarea></div>
         </div>
     </section>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\TechnicianRequest;
+use App\Models\CommissionType;
 use App\Models\Department;
 use App\Models\Skill;
 use App\Models\Technician;
@@ -47,6 +48,7 @@ class TechnicianController extends Controller
                 $data['profile_photo'] = $r->file('profile_photo')->store('technicians', 'public');
             }$t = Technician::create($data);
             $t->skills()->sync($r->validated('skills', []));
+            $t->commissionTypes()->sync($r->validated('commission_type_ids', []));
         });
 
         return to_route('technicians.index')->with('success', 'Technician created.');
@@ -92,6 +94,7 @@ class TechnicianController extends Controller
                 $data['profile_photo'] = $r->file('profile_photo')->store('technicians', 'public');
             }$technician->update($data);
             $technician->skills()->sync($r->validated('skills', []));
+            $technician->commissionTypes()->sync($r->validated('commission_type_ids', []));
         });
 
         return to_route('technicians.index')->with('success', 'Technician updated.');
@@ -107,12 +110,12 @@ class TechnicianController extends Controller
 
     private function form(Technician $technician): View
     {
-        return view('master.technicians.form', compact('technician') + ['managers' => Technician::whereKeyNot($technician->id)->orderBy('name')->get(), 'adminUsers' => User::with('roles')->where('is_active', true)->orderBy('name')->get(), 'departments' => Department::orderBy('department_name')->get(), 'skills' => Skill::where('is_active', true)->orderBy('name')->get()]);
+        return view('master.technicians.form', compact('technician') + ['managers' => Technician::whereKeyNot($technician->id)->orderBy('name')->get(), 'adminUsers' => User::with('roles')->where('is_active', true)->orderBy('name')->get(), 'departments' => Department::orderBy('department_name')->get(), 'skills' => Skill::where('is_active', true)->orderBy('name')->get(), 'commissionTypes' => CommissionType::orderBy('type_name')->get()]);
     }
 
     private function data(TechnicianRequest $request): array
     {
-        $data = $request->safe()->except('skills', 'profile_photo', 'reporting_manager', 'password');
+        $data = $request->safe()->except('skills', 'commission_type_ids', 'profile_photo', 'reporting_manager', 'password');
         $data['department'] = isset($data['department_id']) ? Department::find($data['department_id'])?->department_name : null;
         $data['reporting_manager_id'] = null;
         $data['reporting_user_id'] = null;
@@ -124,7 +127,7 @@ class TechnicianController extends Controller
         if ($request->filled('password')) {
             $data['password'] = Hash::make((string) $request->string('password'));
         }
-        foreach (['monthly_salary', 'daily_salary', 'overtime_rate', 'travel_allowance', 'food_allowance', 'other_allowance', 'pf', 'esi'] as $field) {
+        foreach (['monthly_salary', 'daily_salary', 'overtime_rate', 'travel_allowance', 'food_allowance', 'other_allowance', 'pf', 'esi', 'monthly_paid_leave_days'] as $field) {
             $data[$field] = $data[$field] ?? 0;
         }
 

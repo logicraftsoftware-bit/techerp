@@ -9,6 +9,7 @@ use App\Models\Machine;
 use App\Models\MachineCategory;
 use App\Models\Role;
 use App\Models\ServiceRequest;
+use App\Models\Technician;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -94,6 +95,20 @@ class ServiceRequestTest extends TestCase
         $this->post(route('service-requests.store'), [...$data, 'customer_id' => $otherCustomer->id])
             ->assertRedirect(route('service-requests.index'));
         $this->assertDatabaseHas('service_requests', ['customer_id' => $otherCustomer->id, 'machine_id' => $machine->id, 'service_type' => 'amc']);
+    }
+
+    public function test_service_request_stores_referrer_and_displays_it(): void
+    {
+        $customer = $this->customer('Acme');
+        $machine = Machine::create(['machine_name' => 'Press', 'machine_code' => 'PR654321', 'status' => 'active']);
+        $technician = Technician::create(['name' => 'Referring Tech', 'mobile' => '9111111111', 'joining_date' => '2026-01-01', 'employment_type' => 'full_time', 'status' => 'active', 'salary_type' => 'monthly']);
+        $data = $this->baseData($customer) + ['request_type' => 'existing_service', 'service_type' => 'amc', 'machine_id' => $machine->id, 'referred_by' => "technician:{$technician->id}"];
+
+        $this->post(route('service-requests.store'), $data)->assertRedirect(route('service-requests.index'));
+        $request = ServiceRequest::firstOrFail();
+        $this->assertSame($technician->id, $request->referred_by_technician_id);
+        $this->assertNull($request->referred_by_user_id);
+        $this->get(route('service-requests.show', $request))->assertOk()->assertSee('Referring Tech');
     }
 
     public function test_service_request_form_has_searchable_customer_machine_and_read_only_product_fields(): void

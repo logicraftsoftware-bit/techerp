@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UserRequest;
+use App\Models\CommissionType;
 use App\Models\Department;
 use App\Models\Role;
 use App\Models\User;
@@ -43,6 +44,7 @@ class UserController extends Controller
             }
             $user = User::create($data);
             $user->roles()->sync($request->validated('roles'));
+            $user->commissionTypes()->sync($request->validated('commission_type_ids', []));
         });
 
         return redirect()->route('users.index')->with('success', 'User created successfully.');
@@ -76,6 +78,7 @@ class UserController extends Controller
             }
             $user->update($data);
             $user->roles()->sync($request->validated('roles'));
+            $user->commissionTypes()->sync($request->validated('commission_type_ids', []));
         });
 
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
@@ -107,14 +110,15 @@ class UserController extends Controller
             'roles' => Role::where('is_active', true)->where('slug', '!=', 'super-admin')->get(),
             'departments' => Department::orderBy('department_name')->get(),
             'managers' => User::whereKeyNot($user->id)->whereDoesntHave('roles', fn ($q) => $q->where('slug', 'super-admin'))->orderBy('name')->get(),
+            'commissionTypes' => CommissionType::orderBy('type_name')->get(),
         ]);
     }
 
     private function data(UserRequest $request): array
     {
-        $data = $request->safe()->except('roles', 'avatar');
+        $data = $request->safe()->except('roles', 'avatar', 'commission_type_ids');
         $data['is_active'] = $request->boolean('is_active');
-        foreach (['monthly_salary', 'daily_salary', 'overtime_rate', 'travel_allowance', 'food_allowance', 'other_allowance', 'pf', 'esi'] as $field) {
+        foreach (['monthly_salary', 'daily_salary', 'overtime_rate', 'travel_allowance', 'food_allowance', 'other_allowance', 'pf', 'esi', 'monthly_paid_leave_days'] as $field) {
             $data[$field] = $data[$field] ?? 0;
         }
 

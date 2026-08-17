@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\Expense;
+use App\Models\Holiday;
 use App\Models\Role;
 use App\Models\SalaryRecord;
 use App\Models\Technician;
 use App\Models\TechnicianLeave;
 use App\Models\User;
+use Carbon\Carbon;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -83,5 +85,47 @@ class WorkforceTest extends TestCase
         $anotherSuperAdmin->roles()->attach(Role::where('slug', 'super-admin')->firstOrFail());
 
         $this->get(route('attendance.index'))->assertOk()->assertDontSee('Root Account');
+    }
+
+    public function test_admin_can_edit_and_delete_leave_requests(): void
+    {
+        $key = "technician:{$this->technician->id}";
+        $this->post(route('leave.store'), ['staff' => $key, 'leave_type' => 'casual', 'from_date' => '2026-08-04', 'to_date' => '2026-08-05', 'reason' => 'Personal'])->assertRedirect();
+        $leave = TechnicianLeave::firstOrFail();
+        $this->patch(route('leave.update', $leave), ['status' => 'approved'])->assertRedirect();
+        $this->assertDatabaseCount('attendances', 2);
+
+        $this->get(route('leave.edit', $leave))->assertOk();
+        $this->put(route('leave.update-details', $leave), ['staff' => $key, 'leave_type' => 'sick', 'from_date' => '2026-08-04', 'to_date' => '2026-08-06', 'reason' => 'Updated reason'])->assertRedirect(route('leave.index'));
+        $leave->refresh();
+        $this->assertSame('sick', $leave->leave_type);
+        $this->assertSame(3, $leave->total_days);
+        $this->assertDatabaseCount('attendances', 3);
+
+        $this->delete(route('leave.destroy', $leave))->assertRedirect();
+        $this->assertDatabaseMissing('technician_leaves', ['id' => $leave->id]);
+        $this->assertDatabaseCount('attendances', 0);
+    }
+
+    public function test_holiday_master_add_delete_and_calendar_rendering(): void
+    {
+        $this->post(route('holidays.store'), ['holiday_date' => '2026-08-15', 'name' => 'Independence Day'])->assertRedirect();
+        $holiday = Holiday::firstOrFail();
+        $this->get(route('holidays.index', ['month' => '2026-08']))->assertOk()->assertSee('Independence Day');
+
+        $this->delete(route('holidays.destroy', $holiday))->assertRedirect();
+        $this->assertDatabaseMissing('holidays', ['id' => $holiday->id]);
+    }
+
+    public function test_holidays_are_excluded_from_payroll_working_days(): void
+    {
+        $month = Carbon::parse('2026-08-01');
+        $baselineWorkingDays = collect(range(1, $month->daysInMonth))->map(fn ($d) => $month->copy()->day($d))->filter(fn ($d) => ! $d->isSunday())->count();
+
+        Holiday::create(['holiday_date' => '2026-08-15', 'name' => 'Independence Day']);
+
+        $this->post(route('salary.generate'), ['month' => '2026-08'])->assertRedirect();
+        $salary = SalaryRecord::whereNotNull('technician_id')->firstOrFail();
+        $this->assertSame($baselineWorkingDays - 1, $salary->working_days);
     }
 }

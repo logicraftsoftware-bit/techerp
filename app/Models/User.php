@@ -65,6 +65,11 @@ class User extends Authenticatable
         return $this->hasMany(self::class, 'reporting_manager_id');
     }
 
+    public function commissionTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(CommissionType::class, 'commission_type_user')->withTimestamps();
+    }
+
     public function hasRole(string ...$roles): bool
     {
         return $this->roles->contains(fn (Role $role) => in_array($role->slug, $roles, true));
@@ -97,6 +102,7 @@ class User extends Authenticatable
             'other_allowance' => 'decimal:2',
             'pf' => 'decimal:2',
             'esi' => 'decimal:2',
+            'monthly_paid_leave_days' => 'integer',
         ];
     }
 }
