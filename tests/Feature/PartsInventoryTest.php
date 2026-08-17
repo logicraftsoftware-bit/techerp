@@ -2,14 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Models\MachineCategory;
 use App\Models\Part;
 use App\Models\PartIssue;
 use App\Models\PartRequest;
 use App\Models\Role;
 use App\Models\Technician;
+use App\Models\Unit;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class PartsInventoryTest extends TestCase
@@ -42,10 +45,39 @@ class PartsInventoryTest extends TestCase
         }
     }
 
+    public function test_suppliers_are_removed_from_the_sidebar_but_still_reachable(): void
+    {
+        $this->get(route('parts.index'))->assertOk()->assertDontSee('Suppliers');
+        // Data/routes are intentionally kept, just unlinked from navigation.
+        $this->get(route('suppliers.index'))->assertOk();
+    }
+
+    private function part(): Part
+    {
+        $category = MachineCategory::create(['category_name' => 'Chimney']);
+        $unit = Unit::create(['unit_name' => 'Piece']);
+        $this->post(route('parts.store'), [
+            'part_name' => 'Control Board', 'machine_category_id' => $category->id, 'unit_id' => $unit->id,
+            'purchase_price' => 100, 'selling_price' => 150, 'tax_percent' => 18, 'current_stock' => 0, 'minimum_stock' => 2,
+            'has_amc' => '1', 'has_warranty' => '1', 'warranty_months' => 12, 'status' => 'active',
+        ])->assertRedirect();
+
+        return Part::firstOrFail();
+    }
+
+    public function test_part_stores_category_unit_amc_and_warranty(): void
+    {
+        $part = $this->part();
+        $this->assertNotNull($part->machine_category_id);
+        $this->assertNotNull($part->unit_id);
+        $this->assertTrue($part->has_amc);
+        $this->assertTrue($part->has_warranty);
+        $this->assertSame(12, $part->warranty_months);
+    }
+
     public function test_stock_in_issue_return_and_request_issue_update_stock(): void
     {
-        $this->post(route('parts.store'), ['part_name' => 'Control Board', 'category' => 'Electrical', 'unit' => 'piece', 'purchase_price' => 100, 'selling_price' => 150, 'tax_percent' => 18, 'minimum_stock' => 2, 'warranty_months' => 12, 'status' => 'active'])->assertRedirect();
-        $part = Part::firstOrFail();
+        $part = $this->part();
 
         $this->post(route('inventory.store'), ['part_id' => $part->id, 'transaction_type' => 'stock_in', 'quantity' => 10, 'unit_cost' => 100])->assertRedirect();
         $this->assertSame(10, $part->fresh()->current_stock);
@@ -65,5 +97,30 @@ class PartsInventoryTest extends TestCase
 
         $this->patch(route('parts-requests.update', $request), ['status' => 'issued'])->assertRedirect();
         $this->assertSame(5, $part->fresh()->current_stock);
+    }
+
+    public function test_part_bulk_csv_import(): void
+    {
+        MachineCategory::create(['category_name' => 'Chimney']);
+        Unit::create(['unit_name' => 'Piece']);
+
+        ob_start();
+        $this->get(route('parts.import.sample'))
+            ->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->sendContent();
+        $this->assertStringContainsString('part_name', ob_get_clean());
+
+        $csv = "part_name,category,brand,compatible_models,start_date,unit,dealer_price,mrp,total_stock,tax_percent,minimum_stock,has_amc,has_warranty,warranty_months,status\n"
+            .'Bulk Part One,Chimney,,,2026-01-01,Piece,100,150,20,18,2,Y,Y,12,active'."\n"
+            .'Bulk Part Two,Unknown Category,,,2026-01-01,Piece,100,150,20,18,2,N,N,,active'."\n";
+        $file = UploadedFile::fake()->createWithContent('parts.csv', $csv);
+
+        $this->post(route('parts.import.store'), ['file' => $file])
+            ->assertRedirect(route('parts.index'))
+            ->assertSessionHas('import_errors');
+        $this->assertDatabaseHas('parts', ['part_name' => 'Bulk Part One', 'current_stock' => 20, 'has_amc' => true, 'has_warranty' => true, 'warranty_months' => 12]);
+        $this->assertDatabaseMissing('parts', ['part_name' => 'Bulk Part Two']);
+        $this->assertSame(1, Part::count());
     }
 }

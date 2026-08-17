@@ -28,7 +28,7 @@
                 @endunless
                 @foreach(config('crm.navigation') as $group => $items)
                     @php
-                        $resources = ['customers', 'brands', 'departments', 'machine-categories', 'machines', 'machine-inventory', 'technicians', 'skills', 'amc-plans', 'service-requests', 'assignments', 'job-cards', 'work-status', 'service-reports', 'parts', 'suppliers', 'inventory', 'parts-issues', 'job-parts', 'parts-requests', 'attendance', 'leave', 'salary', 'expenses'];
+                        $resources = ['customers', 'brands', 'departments', 'machine-categories', 'machines', 'machine-inventory', 'technicians', 'skills', 'amc-plans', 'service-requests', 'assignments', 'job-cards', 'work-status', 'service-reports', 'parts', 'units', 'inventory', 'parts-issues', 'job-parts', 'parts-requests', 'attendance', 'leave', 'salary', 'expenses'];
                         $items = collect($items)->filter(fn ($item) => $canSeeEverything || auth()->user()->hasPermission($item[0].'.view'))->all();
                     @endphp
                     @continue(empty($items))

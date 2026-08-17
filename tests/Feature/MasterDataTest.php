@@ -11,6 +11,7 @@ use App\Models\MachineCategory;
 use App\Models\Role;
 use App\Models\Skill;
 use App\Models\Technician;
+use App\Models\Unit;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -109,6 +110,17 @@ class MasterDataTest extends TestCase
         $this->assertDatabaseHas('brands', ['brand_name' => 'Daikin India']);
         $this->delete(route('brands.destroy', $brand))->assertRedirect();
         $this->assertDatabaseMissing('brands', ['id' => $brand->id]);
+    }
+
+    public function test_unit_master_crud(): void
+    {
+        $this->post(route('units.store'), ['unit_name' => 'Box'])->assertRedirect(route('units.index'));
+        $unit = Unit::firstOrFail();
+        $this->get(route('units.index'))->assertOk()->assertSee('Box');
+        $this->put(route('units.update', $unit), ['unit_name' => 'Carton'])->assertRedirect(route('units.index'));
+        $this->assertDatabaseHas('units', ['id' => $unit->id, 'unit_name' => 'Carton']);
+        $this->delete(route('units.destroy', $unit))->assertRedirect();
+        $this->assertDatabaseMissing('units', ['id' => $unit->id]);
     }
 
     public function test_role_master_crud_and_system_role_guard(): void

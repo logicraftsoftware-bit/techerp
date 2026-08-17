@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\Brand;
 use App\Models\InventoryTransaction;
 use App\Models\JobPart;
+use App\Models\MachineCategory;
 use App\Models\Part;
 use App\Models\PartIssue;
 use App\Models\PartRequest;
 use App\Models\Supplier;
 use App\Models\Technician;
+use App\Models\Unit;
 use App\Models\WorkAssignment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,19 +43,45 @@ class PartsInventoryController extends Controller
 
     public function parts(): View
     {
-        return view('parts-inventory.parts', ['records' => Part::latest()->paginate(15)]);
+        return view('parts-inventory.parts', ['records' => Part::with(['machineCategory', 'unitMaster'])->latest()->paginate(15)]);
     }
 
     public function createPart(): View
     {
-        return view('parts-inventory.parts-create', ['brands' => Brand::orderBy('brand_name')->get()]);
+        return view('parts-inventory.parts-create', [
+            'brands' => Brand::orderBy('brand_name')->get(),
+            'categories' => MachineCategory::orderBy('category_name')->get(),
+            'units' => Unit::orderBy('unit_name')->get(),
+        ]);
     }
 
     public function savePart(Request $r): RedirectResponse
     {
-        $p = $r->validate(['id' => 'nullable|exists:parts,id', 'part_name' => 'required|max:150', 'category' => 'required|max:100', 'brand_id' => 'nullable|exists:brands,id', 'compatible_models' => 'nullable|max:255', 'unit' => 'required|max:30', 'purchase_price' => 'required|numeric|min:0', 'selling_price' => 'required|numeric|min:0', 'tax_percent' => 'required|numeric|min:0|max:100', 'minimum_stock' => 'required|integer|min:0', 'warranty_months' => 'required|integer|min:0', 'status' => ['required', Rule::in(['active', 'inactive'])]]);
+        $p = $r->validate([
+            'id' => 'nullable|exists:parts,id',
+            'part_name' => 'required|max:150',
+            'machine_category_id' => 'required|exists:machine_categories,id',
+            'brand_id' => 'nullable|exists:brands,id',
+            'compatible_models' => 'nullable|max:255',
+            'start_date' => 'nullable|date',
+            'unit_id' => 'required|exists:units,id',
+            'purchase_price' => 'required|numeric|min:0',
+            'selling_price' => 'required|numeric|min:0',
+            'tax_percent' => 'required|numeric|min:0|max:100',
+            'current_stock' => 'required|integer|min:0',
+            'minimum_stock' => 'required|integer|min:0',
+            'has_amc' => 'nullable|boolean',
+            'has_warranty' => 'nullable|boolean',
+            'warranty_months' => 'nullable|required_if:has_warranty,1|integer|min:0',
+            'status' => ['required', Rule::in(['active', 'inactive'])],
+        ]);
         $id = $p['id'] ?? null;
         unset($p['id']);
+        $p['has_amc'] = $r->boolean('has_amc');
+        $p['has_warranty'] = $r->boolean('has_warranty');
+        if (! $p['has_warranty']) {
+            $p['warranty_months'] = null;
+        }
         if ($id) {
             Part::findOrFail($id)->update($p);
         } else {
@@ -105,17 +133,17 @@ class PartsInventoryController extends Controller
 
     public function inventory(): View
     {
-        return view('parts-inventory.inventory', ['records' => InventoryTransaction::with(['part', 'supplier'])->latest()->paginate(20)]);
+        return view('parts-inventory.inventory', ['records' => InventoryTransaction::with(['part'])->latest()->paginate(20)]);
     }
 
     public function createTransaction(): View
     {
-        return view('parts-inventory.inventory-create', ['parts' => Part::where('status', 'active')->get(), 'suppliers' => Supplier::where('status', 'active')->get()]);
+        return view('parts-inventory.inventory-create', ['parts' => Part::where('status', 'active')->get()]);
     }
 
     public function transact(Request $r): RedirectResponse
     {
-        $d = $r->validate(['part_id' => 'required|exists:parts,id', 'supplier_id' => 'nullable|exists:suppliers,id', 'transaction_type' => ['required', Rule::in(['stock_in', 'stock_out', 'adjustment_add', 'adjustment_remove'])], 'quantity' => 'required|integer|min:1', 'unit_cost' => 'nullable|numeric|min:0', 'warehouse' => 'nullable|max:100', 'reference' => 'nullable|max:100', 'remarks' => 'nullable']);
+        $d = $r->validate(['part_id' => 'required|exists:parts,id', 'transaction_type' => ['required', Rule::in(['stock_in', 'stock_out', 'adjustment_add', 'adjustment_remove'])], 'quantity' => 'required|integer|min:1', 'unit_cost' => 'nullable|numeric|min:0', 'warehouse' => 'nullable|max:100', 'reference' => 'nullable|max:100', 'remarks' => 'nullable']);
         DB::transaction(function () use ($d, $r) {
             $p = Part::lockForUpdate()->findOrFail($d['part_id']);
             $add = in_array($d['transaction_type'], ['stock_in', 'adjustment_add']);

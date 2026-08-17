@@ -15,7 +15,7 @@ return [
         ],
         'Parts & Inventory' => [
             ['parts', 'Parts Master', 'Catalog, prices and minimum stock'],
-            ['suppliers', 'Suppliers', 'Supplier contacts and tax information'],
+            ['units', 'Unit Master', 'Stock units used by Parts Master'],
             ['inventory', 'Inventory', 'Stock in, stock out and low stock'],
             ['parts-issues', 'Parts Issue / Return', 'Technician issues, usage and returns'],
             ['job-parts', 'Parts Used in Job', 'Job-wise consumption and warranty'],
