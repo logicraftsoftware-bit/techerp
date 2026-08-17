@@ -199,6 +199,31 @@ class MasterDataTest extends TestCase
             ->assertSee('Chimney');
     }
 
+    public function test_machine_bulk_csv_import(): void
+    {
+        Brand::create(['brand_name' => 'Kutchina']);
+        MachineCategory::create(['category_name' => 'Chimney']);
+
+        ob_start();
+        $this->get(route('machines.import.sample'))
+            ->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->sendContent();
+        $this->assertStringContainsString('machine_name', ob_get_clean());
+
+        $csv = "brand_name,machine_category_name,machine_name,model,manufacturing_date,service_period,buying_price,selling_price,total_stock,location_name,status\n"
+            .'Kutchina,Chimney,Bulk Machine One,BM-100,2026-01-15,4_months,14500,21990,10,Main Warehouse,active'."\n"
+            .'Unknown Brand,Chimney,Bulk Machine Two,BM-200,2026-01-15,4_months,14500,21990,10,Main Warehouse,active'."\n";
+        $file = UploadedFile::fake()->createWithContent('machines.csv', $csv);
+
+        $this->post(route('machines.import.store'), ['file' => $file])
+            ->assertRedirect(route('machines.index'))
+            ->assertSessionHas('import_errors');
+        $this->assertDatabaseHas('machines', ['machine_name' => 'Bulk Machine One', 'total_stock' => 10]);
+        $this->assertDatabaseMissing('machines', ['machine_name' => 'Bulk Machine Two']);
+        $this->assertSame(1, Machine::count());
+    }
+
     public function test_machine_document_is_served_without_public_storage_link(): void
     {
         Storage::fake('public');

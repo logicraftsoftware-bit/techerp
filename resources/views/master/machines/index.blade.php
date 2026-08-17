@@ -7,8 +7,20 @@
         <h2 class="mt-2 text-3xl font-bold">Machines</h2>
         <p class="mt-1 text-sm text-slate-500">Machine catalog, pricing, stock and service periods.</p>
     </div>
-    <a class="btn-primary" href="{{ route('machines.create') }}">+ Add Machine</a>
+    <div class="flex gap-3">
+        <a class="btn-secondary" href="{{ route('machines.import.create') }}">Bulk Upload</a>
+        <a class="btn-primary" href="{{ route('machines.create') }}">+ Add Machine</a>
+    </div>
 </div>
+
+@if(session('import_errors') && count(session('import_errors')))
+    <div class="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <p class="font-semibold">Some rows from your last import were skipped:</p>
+        <ul class="mt-2 list-disc space-y-1 pl-5">
+            @foreach(session('import_errors') as $error)<li>{{ $error }}</li>@endforeach
+        </ul>
+    </div>
+@endif
 
 <form class="card mb-5 flex gap-3 p-4" method="GET" action="{{ route('machines.index') }}">
     <input class="form-input max-w-md" name="search" value="{{ request('search') }}" placeholder="Search machines...">

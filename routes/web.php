@@ -10,6 +10,7 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\JobCardController;
 use App\Http\Controllers\MachineCategoryController;
 use App\Http\Controllers\MachineController;
+use App\Http\Controllers\MachineImportController;
 use App\Http\Controllers\MachineInventoryController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\PartsInventoryController;
@@ -46,6 +47,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/customers-import', [CustomerImportController::class, 'create'])->name('customers.import.create');
     Route::post('/customers-import', [CustomerImportController::class, 'store'])->name('customers.import.store');
     Route::get('/customers-import/sample', [CustomerImportController::class, 'sample'])->name('customers.import.sample');
+    Route::get('/machines-import', [MachineImportController::class, 'create'])->name('machines.import.create');
+    Route::post('/machines-import', [MachineImportController::class, 'store'])->name('machines.import.store');
+    Route::get('/machines-import/sample', [MachineImportController::class, 'sample'])->name('machines.import.sample');
     Route::resources(['customers' => CustomerController::class, 'machines' => MachineController::class, 'technicians' => TechnicianController::class]);
     Route::get('/machine-inventory', [MachineInventoryController::class, 'index'])->name('machine-inventory.index');
     Route::get('/machine-inventory/create', [MachineInventoryController::class, 'create'])->name('machine-inventory.create');
