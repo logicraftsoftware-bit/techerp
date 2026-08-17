@@ -14,6 +14,7 @@ use App\Models\Technician;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -32,13 +33,36 @@ class MasterDataTest extends TestCase
 
     public function test_customer_contact_crud(): void
     {
-        $data = ['entry_type' => 'crm', 'refer_type' => 'self', 'customer_type' => 'company', 'customer_name' => 'Acme', 'mobile' => '9999999999', 'address' => 'Street', 'city' => 'Mumbai', 'state' => 'Maharashtra', 'pin_code' => '400001', 'status' => 'active', 'contacts' => [['name' => 'Jane', 'mobile' => '8888888888']]];
+        $data = ['entry_type' => 'crm', 'refer_type' => 'self', 'customer_type' => 'company', 'customer_name' => 'Acme', 'date_of_birth' => '1990-05-20', 'mobile' => '9999999999', 'address' => 'Street', 'city' => 'Mumbai', 'state' => 'Maharashtra', 'pin_code' => '400001', 'status' => 'active', 'contacts' => [['name' => 'Jane', 'mobile' => '8888888888']]];
         $this->post(route('customers.store'), $data)->assertRedirect(route('customers.index'));
         $c = Customer::first();
         $this->assertMatchesRegularExpression('/^AC\d{6}$/', $c->customer_code);
         $this->assertCount(1, $c->contacts);
+        $this->assertSame('1990-05-20', $c->date_of_birth->format('Y-m-d'));
         $this->delete(route('customers.destroy', $c))->assertRedirect();
         $this->assertSoftDeleted($c);
+    }
+
+    public function test_customer_bulk_csv_import(): void
+    {
+        ob_start();
+        $this->get(route('customers.import.sample'))
+            ->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8')
+            ->sendContent();
+        $this->assertStringContainsString('customer_name', ob_get_clean());
+
+        $csv = "customer_type,customer_name,company_name,contact_person,date_of_birth,mobile,alternate_mobile,email,whatsapp,gst_number,pan_number,address,city,state,pin_code,status,notes\n"
+            ."individual,Bulk Customer One,,,1985-01-15,9000000001,,,,,,Street 1,Kolkata,West Bengal,700001,active,\n"
+            ."individual,,,,,9000000002,,,,,,Street 2,Kolkata,West Bengal,700002,active,\n";
+        $file = UploadedFile::fake()->createWithContent('customers.csv', $csv);
+
+        $this->post(route('customers.import.store'), ['file' => $file])
+            ->assertRedirect(route('customers.index'))
+            ->assertSessionHas('import_errors');
+        $this->assertDatabaseHas('customers', ['customer_name' => 'Bulk Customer One', 'mobile' => '9000000001']);
+        $this->assertDatabaseMissing('customers', ['mobile' => '9000000002']);
+        $this->assertSame(1, Customer::count());
     }
 
     public function test_customer_form_uses_map_picker_with_hidden_coordinates(): void

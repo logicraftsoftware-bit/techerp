@@ -15,7 +15,7 @@ class Customer extends Model
 
     protected function casts(): array
     {
-        return ['latitude' => 'decimal:7', 'longitude' => 'decimal:7'];
+        return ['latitude' => 'decimal:7', 'longitude' => 'decimal:7', 'date_of_birth' => 'date'];
     }
 
     protected static function booted(): void

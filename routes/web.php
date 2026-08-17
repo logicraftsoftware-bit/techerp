@@ -4,6 +4,7 @@ use App\Http\Controllers\AmcPlanController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CustomerImportController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\JobCardController;
@@ -42,6 +43,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::delete('/machine-documents/{document}', [MachineController::class, 'destroyDocument'])->name('machine-documents.destroy');
     Route::get('/technicians/{technician}/photo', [TechnicianController::class, 'photo'])->name('technicians.photo');
     Route::get('/technicians/{technician}/id-card', [TechnicianController::class, 'idCard'])->name('technicians.id-card');
+    Route::get('/customers-import', [CustomerImportController::class, 'create'])->name('customers.import.create');
+    Route::post('/customers-import', [CustomerImportController::class, 'store'])->name('customers.import.store');
+    Route::get('/customers-import/sample', [CustomerImportController::class, 'sample'])->name('customers.import.sample');
     Route::resources(['customers' => CustomerController::class, 'machines' => MachineController::class, 'technicians' => TechnicianController::class]);
     Route::get('/machine-inventory', [MachineInventoryController::class, 'index'])->name('machine-inventory.index');
     Route::get('/machine-inventory/create', [MachineInventoryController::class, 'create'])->name('machine-inventory.create');
