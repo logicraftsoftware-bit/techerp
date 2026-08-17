@@ -16,8 +16,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 class PartImportController extends Controller
 {
     private const COLUMNS = [
-        'part_name', 'category', 'brand', 'compatible_models', 'start_date', 'unit',
-        'dealer_price', 'mrp', 'total_stock', 'tax_percent', 'minimum_stock',
+        'part_name', 'category', 'brand', 'start_date', 'unit',
+        'dealer_price', 'mrp', 'total_stock',
         'has_amc', 'has_warranty', 'warranty_months', 'status',
     ];
 
@@ -79,25 +79,19 @@ class PartImportController extends Controller
 
             $validator = Validator::make([
                 'part_name' => $payload['part_name'] ?? null,
-                'compatible_models' => $payload['compatible_models'] ?? null,
                 'start_date' => $payload['start_date'] ?? null,
                 'dealer_price' => $payload['dealer_price'] ?? null,
                 'mrp' => $payload['mrp'] ?? null,
                 'total_stock' => $payload['total_stock'] ?? null,
-                'tax_percent' => $payload['tax_percent'] ?? null,
-                'minimum_stock' => $payload['minimum_stock'] ?? null,
                 'warranty_months' => $payload['warranty_months'] ?? null,
                 'status' => $payload['status'] ?? null,
                 'has_warranty' => $hasWarranty,
             ], [
                 'part_name' => ['required', 'max:150'],
-                'compatible_models' => ['nullable', 'max:255'],
                 'start_date' => ['nullable', 'date'],
                 'dealer_price' => ['required', 'numeric', 'min:0'],
                 'mrp' => ['required', 'numeric', 'min:0'],
                 'total_stock' => ['nullable', 'integer', 'min:0'],
-                'tax_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
-                'minimum_stock' => ['nullable', 'integer', 'min:0'],
                 'warranty_months' => ['nullable', 'required_if:has_warranty,1', 'integer', 'min:0'],
                 'status' => ['nullable', Rule::in(['active', 'inactive'])],
             ]);
@@ -116,14 +110,11 @@ class PartImportController extends Controller
                 'part_name' => $clean['part_name'],
                 'machine_category_id' => $category->id,
                 'brand_id' => $brand?->id,
-                'compatible_models' => $clean['compatible_models'] ?: null,
                 'start_date' => $clean['start_date'] ?: null,
                 'unit_id' => $unit->id,
                 'purchase_price' => $clean['dealer_price'],
                 'selling_price' => $clean['mrp'],
                 'current_stock' => $clean['total_stock'] ?? 0,
-                'tax_percent' => $clean['tax_percent'] ?? 0,
-                'minimum_stock' => $clean['minimum_stock'] ?? 0,
                 'has_amc' => in_array(strtolower(trim((string) ($payload['has_amc'] ?? ''))), ['y', 'yes', '1', 'true'], true),
                 'has_warranty' => $hasWarranty,
                 'warranty_months' => $hasWarranty ? $clean['warranty_months'] : null,
@@ -143,7 +134,7 @@ class PartImportController extends Controller
         return response()->streamDownload(function () {
             $out = fopen('php://output', 'w');
             fputcsv($out, self::COLUMNS);
-            fputcsv($out, ['Control Board', 'Chimney', 'Kutchina', 'Amaze 90, Amaze 120', '2026-01-15', 'piece', '850', '1200', '25', '18', '5', 'Y', 'Y', '12', 'active']);
+            fputcsv($out, ['Control Board', 'Chimney', 'Kutchina', '2026-01-15', 'piece', '850', '1200', '25', 'Y', 'Y', '12', 'active']);
             fclose($out);
         }, 'parts-sample.csv', ['Content-Type' => 'text/csv']);
     }
