@@ -6,7 +6,7 @@
     <section class="card p-6">
         <div class="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div><p class="font-semibold text-slate-800">CSV format</p><p class="text-xs text-slate-400">First row must be the column headings from the sample file. Brand and Machine Category must already exist in their respective masters -- rows referencing an unknown brand or category are skipped.</p></div>
-            <a href="{{ route('machines.import.sample') }}" class="btn-secondary">Download Sample CSV</a>
+            <a href="{{ route('machines.import.sample') }}" class="btn-secondary shrink-0 whitespace-nowrap">Download Sample CSV</a>
         </div>
         <form method="POST" action="{{ route('machines.import.store') }}" enctype="multipart/form-data">
             @csrf

@@ -6,7 +6,7 @@
     <section class="card p-6">
         <div class="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
             <div><p class="font-semibold text-slate-800">CSV format</p><p class="text-xs text-slate-400">First row must be the column headings from the sample file. customer_name, mobile, address, city, state and pin_code are required; everything else is optional.</p></div>
-            <a href="{{ route('customers.import.sample') }}" class="btn-secondary">Download Sample CSV</a>
+            <a href="{{ route('customers.import.sample') }}" class="btn-secondary shrink-0 whitespace-nowrap">Download Sample CSV</a>
         </div>
         <form method="POST" action="{{ route('customers.import.store') }}" enctype="multipart/form-data">
             @csrf
