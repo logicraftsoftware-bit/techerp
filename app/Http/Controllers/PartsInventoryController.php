@@ -25,6 +25,7 @@ class PartsInventoryController extends Controller
     {
         $this->middleware('permission:parts,view')->only(['parts']);
         $this->middleware('permission:parts,create')->only(['createPart', 'savePart']);
+        $this->middleware('permission:parts,update')->only(['editPart', 'updatePart']);
         $this->middleware('permission:parts,delete')->only(['deletePart']);
         $this->middleware('permission:suppliers,view')->only(['suppliers']);
         $this->middleware('permission:suppliers,create')->only(['createSupplier', 'saveSupplier']);
@@ -41,24 +42,61 @@ class PartsInventoryController extends Controller
         $this->middleware('permission:parts-requests,update')->only(['actionRequest']);
     }
 
-    public function parts(): View
+    public function parts(Request $r): View
     {
-        return view('parts-inventory.parts', ['records' => Part::with(['machineCategory', 'unitMaster'])->latest()->paginate(15)]);
+        $records = Part::with(['machineCategory', 'unitMaster'])
+            ->when($r->search, fn ($q, $s) => $q->where(fn ($q) => $q->where('part_name', 'like', "%$s%")->orWhere('part_code', 'like', "%$s%")))
+            ->latest()->paginate(15)->withQueryString();
+
+        return view('parts-inventory.parts', compact('records'));
     }
 
     public function createPart(): View
     {
-        return view('parts-inventory.parts-create', [
+        return $this->partForm(new Part);
+    }
+
+    public function editPart(Part $part): View
+    {
+        return $this->partForm($part);
+    }
+
+    public function savePart(Request $r): RedirectResponse
+    {
+        $p = $this->partData($r);
+        $p['part_code'] = 'PT-'.str_pad((string) (Part::count() + 1), 5, '0', STR_PAD_LEFT);
+        Part::create($p);
+
+        return to_route('parts.index')->with('success', 'Part created.');
+    }
+
+    public function updatePart(Request $r, Part $part): RedirectResponse
+    {
+        $part->update($this->partData($r));
+
+        return to_route('parts.index')->with('success', 'Part updated.');
+    }
+
+    public function deletePart(Part $part): RedirectResponse
+    {
+        $part->delete();
+
+        return back()->with('success', 'Part deleted.');
+    }
+
+    private function partForm(Part $part): View
+    {
+        return view('parts-inventory.parts-form', [
+            'part' => $part,
             'brands' => Brand::orderBy('brand_name')->get(),
             'categories' => MachineCategory::orderBy('category_name')->get(),
             'units' => Unit::orderBy('unit_name')->get(),
         ]);
     }
 
-    public function savePart(Request $r): RedirectResponse
+    private function partData(Request $r): array
     {
         $p = $r->validate([
-            'id' => 'nullable|exists:parts,id',
             'part_name' => 'required|max:150',
             'machine_category_id' => 'required|exists:machine_categories,id',
             'brand_id' => 'nullable|exists:brands,id',
@@ -75,28 +113,13 @@ class PartsInventoryController extends Controller
             'warranty_months' => 'nullable|required_if:has_warranty,1|integer|min:0',
             'status' => ['required', Rule::in(['active', 'inactive'])],
         ]);
-        $id = $p['id'] ?? null;
-        unset($p['id']);
         $p['has_amc'] = $r->boolean('has_amc');
         $p['has_warranty'] = $r->boolean('has_warranty');
         if (! $p['has_warranty']) {
             $p['warranty_months'] = null;
         }
-        if ($id) {
-            Part::findOrFail($id)->update($p);
-        } else {
-            $p['part_code'] = 'PT-'.str_pad((string) (Part::count() + 1), 5, '0', STR_PAD_LEFT);
-            Part::create($p);
-        }
 
-        return to_route('parts.index')->with('success', 'Part saved.');
-    }
-
-    public function deletePart(Part $part): RedirectResponse
-    {
-        $part->delete();
-
-        return back()->with('success', 'Part deleted.');
+        return $p;
     }
 
     public function suppliers(): View

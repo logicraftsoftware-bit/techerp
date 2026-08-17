@@ -99,6 +99,35 @@ class PartsInventoryTest extends TestCase
         $this->assertSame(5, $part->fresh()->current_stock);
     }
 
+    public function test_part_can_be_edited_updated_and_deleted(): void
+    {
+        $part = $this->part();
+
+        $this->get(route('parts.edit', $part))->assertOk()->assertSee('Control Board');
+
+        $this->put(route('parts.update', $part), [
+            'part_name' => 'Control Board V2', 'machine_category_id' => $part->machine_category_id, 'unit_id' => $part->unit_id,
+            'purchase_price' => 120, 'selling_price' => 180, 'tax_percent' => 18, 'current_stock' => 5, 'minimum_stock' => 2,
+            'has_amc' => '0', 'has_warranty' => '0', 'status' => 'active',
+        ])->assertRedirect(route('parts.index'));
+        $this->assertSame('Control Board V2', $part->fresh()->part_name);
+        $this->assertSame(5, $part->fresh()->current_stock);
+
+        $this->delete(route('parts.destroy', $part))->assertRedirect();
+        $this->assertDatabaseMissing('parts', ['id' => $part->id]);
+    }
+
+    public function test_parts_index_search_filters_by_name_or_code(): void
+    {
+        $category = MachineCategory::create(['category_name' => 'Chimney']);
+        $unit = Unit::create(['unit_name' => 'Piece']);
+        Part::create(['part_name' => 'Control Board', 'part_code' => 'PT-00001', 'machine_category_id' => $category->id, 'unit_id' => $unit->id, 'purchase_price' => 100, 'selling_price' => 150, 'tax_percent' => 0, 'current_stock' => 0, 'minimum_stock' => 0, 'status' => 'active']);
+        Part::create(['part_name' => 'Fan Motor', 'part_code' => 'PT-00002', 'machine_category_id' => $category->id, 'unit_id' => $unit->id, 'purchase_price' => 100, 'selling_price' => 150, 'tax_percent' => 0, 'current_stock' => 0, 'minimum_stock' => 0, 'status' => 'active']);
+
+        $this->get(route('parts.index', ['search' => 'Fan']))->assertOk()->assertSee('Fan Motor')->assertDontSee('Control Board');
+        $this->get(route('parts.index', ['search' => 'PT-00001']))->assertOk()->assertSee('Control Board')->assertDontSee('Fan Motor');
+    }
+
     public function test_part_bulk_csv_import(): void
     {
         MachineCategory::create(['category_name' => 'Chimney']);

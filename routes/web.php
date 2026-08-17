@@ -73,6 +73,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/parts', [PartsInventoryController::class, 'parts'])->name('parts.index');
     Route::get('/parts/create', [PartsInventoryController::class, 'createPart'])->name('parts.create');
     Route::post('/parts', [PartsInventoryController::class, 'savePart'])->name('parts.store');
+    Route::get('/parts/{part}/edit', [PartsInventoryController::class, 'editPart'])->name('parts.edit');
+    Route::put('/parts/{part}', [PartsInventoryController::class, 'updatePart'])->name('parts.update');
     Route::get('/parts-import', [PartImportController::class, 'create'])->name('parts.import.create');
     Route::post('/parts-import', [PartImportController::class, 'store'])->name('parts.import.store');
     Route::get('/parts-import/sample', [PartImportController::class, 'sample'])->name('parts.import.sample');
