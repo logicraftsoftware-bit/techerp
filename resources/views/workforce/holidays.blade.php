@@ -73,17 +73,36 @@
         </div>
     </div>
 
-    <div class="card p-5">
-        <h3 class="mb-3 font-bold text-slate-800">{{ $month->year }} Holidays</h3>
-        <div class="divide-y">
-            @forelse($yearHolidays as $holiday)
-                <div class="py-2 text-sm">
-                    <span class="font-semibold text-rose-600">{{ $holiday->holiday_date->format('d M Y') }}</span>
-                    <p class="text-slate-500">{{ $holiday->name ?: 'Holiday' }}</p>
+    <div class="flex flex-col gap-5">
+        <div class="card p-5">
+            <h3 class="mb-3 font-bold text-slate-800">{{ $month->year }} Holidays by Month</h3>
+            @php $groupedHolidays = $yearHolidays->groupBy(fn ($h) => $h->holiday_date->format('F')); @endphp
+            @forelse($groupedHolidays as $monthName => $monthHolidays)
+                <div class="mt-4 first:mt-0">
+                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ $monthName }}</p>
+                    <div class="mt-1 divide-y">
+                        @foreach($monthHolidays as $holiday)
+                            <div class="py-2 text-sm"><span class="font-semibold text-rose-600">{{ $holiday->holiday_date->format('d M') }}</span> <span class="text-slate-500">— {{ $holiday->name ?: 'Holiday' }}</span></div>
+                        @endforeach
+                    </div>
                 </div>
             @empty
                 <p class="py-6 text-center text-sm text-slate-400">No holidays added for {{ $month->year }}.</p>
             @endforelse
+        </div>
+
+        <div class="card p-5">
+            <h3 class="mb-3 font-bold text-slate-800">All {{ $month->year }} Holidays</h3>
+            <div class="divide-y">
+                @forelse($yearHolidays as $holiday)
+                    <div class="py-2 text-sm">
+                        <span class="font-semibold text-rose-600">{{ $holiday->holiday_date->format('d M Y') }}</span>
+                        <p class="text-slate-500">{{ $holiday->name ?: 'Holiday' }}</p>
+                    </div>
+                @empty
+                    <p class="py-6 text-center text-sm text-slate-400">No holidays added for {{ $month->year }}.</p>
+                @endforelse
+            </div>
         </div>
     </div>
 
