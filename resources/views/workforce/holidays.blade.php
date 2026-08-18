@@ -54,27 +54,6 @@
         </div>
 
         <div class="card mt-5 p-5">
-            <h3 class="mb-3 font-bold text-slate-800">Holidays in {{ $month->format('F Y') }}</h3>
-            <div class="divide-y">
-                @forelse($holidays->sortBy('holiday_date') as $holiday)
-                    <div class="flex items-center justify-between py-2 text-sm">
-                        <div><span class="font-semibold text-rose-600">{{ $holiday->holiday_date->format('d M Y') }}</span> <span class="text-slate-500">— {{ $holiday->name ?: 'Holiday' }}</span></div>
-                        @if($canDelete)
-                            <form method="POST" action="{{ route('holidays.destroy', ['holiday' => $holiday, 'month' => $month->format('Y-m')]) }}" onsubmit="return confirm('Remove this holiday?')">
-                                @csrf @method('DELETE')
-                                <button class="table-action text-rose-600">Delete</button>
-                            </form>
-                        @endif
-                    </div>
-                @empty
-                    <p class="py-6 text-center text-sm text-slate-400">No holidays this month.</p>
-                @endforelse
-            </div>
-        </div>
-    </div>
-
-    <div class="flex flex-col gap-5">
-        <div class="card p-5">
             <h3 class="mb-3 font-bold text-slate-800">{{ $month->year }} Holidays by Month</h3>
             @php $groupedHolidays = $yearHolidays->groupBy(fn ($h) => $h->holiday_date->format('F')); @endphp
             @forelse($groupedHolidays as $monthName => $monthHolidays)
@@ -90,19 +69,24 @@
                 <p class="py-6 text-center text-sm text-slate-400">No holidays added for {{ $month->year }}.</p>
             @endforelse
         </div>
+    </div>
 
-        <div class="card p-5">
-            <h3 class="mb-3 font-bold text-slate-800">All {{ $month->year }} Holidays</h3>
-            <div class="divide-y">
-                @forelse($yearHolidays as $holiday)
-                    <div class="py-2 text-sm">
-                        <span class="font-semibold text-rose-600">{{ $holiday->holiday_date->format('d M Y') }}</span>
-                        <p class="text-slate-500">{{ $holiday->name ?: 'Holiday' }}</p>
-                    </div>
-                @empty
-                    <p class="py-6 text-center text-sm text-slate-400">No holidays added for {{ $month->year }}.</p>
-                @endforelse
-            </div>
+    <div class="card p-5">
+        <h3 class="mb-3 font-bold text-slate-800">Holidays in {{ $month->format('F Y') }}</h3>
+        <div class="divide-y">
+            @forelse($holidays->sortBy('holiday_date') as $holiday)
+                <div class="flex items-center justify-between py-2 text-sm">
+                    <div><span class="font-semibold text-rose-600">{{ $holiday->holiday_date->format('d M Y') }}</span> <span class="text-slate-500">— {{ $holiday->name ?: 'Holiday' }}</span></div>
+                    @if($canDelete)
+                        <form method="POST" action="{{ route('holidays.destroy', ['holiday' => $holiday, 'month' => $month->format('Y-m')]) }}" onsubmit="return confirm('Remove this holiday?')">
+                            @csrf @method('DELETE')
+                            <button class="table-action text-rose-600">Delete</button>
+                        </form>
+                    @endif
+                </div>
+            @empty
+                <p class="py-6 text-center text-sm text-slate-400">No holidays this month.</p>
+            @endforelse
         </div>
     </div>
 
