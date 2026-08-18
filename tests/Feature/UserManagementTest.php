@@ -42,7 +42,7 @@ class UserManagementTest extends TestCase
     // on every create/update submission.
     private function baseUserData(): array
     {
-        return ['gender' => 'male', 'joining_date' => '2026-01-01', 'employment_type' => 'full_time', 'employment_status' => 'active', 'salary_type' => 'monthly', 'monthly_salary' => 30000];
+        return ['gender' => 'male', 'joining_date' => '2026-01-01', 'employment_type' => 'full_time', 'employment_status' => 'active', 'salary_structure_type' => 'fixed', 'salary_type' => 'monthly', 'monthly_salary' => 30000];
     }
 
     public function test_super_admin_can_create_user_with_role(): void
@@ -60,6 +60,24 @@ class UserManagementTest extends TestCase
         $this->assertMatchesRegularExpression('/^[A-Z]{2}\d{6}$/', $created->employee_code);
         $this->assertSame('30000.00', $created->monthly_salary);
         $this->assertSame(2, $created->monthly_paid_leave_days);
+        $this->assertTrue($created->commissionTypes->contains($commissionType));
+    }
+
+    public function test_user_commission_based_salary_structure(): void
+    {
+        $commissionType = CommissionType::create(['type_name' => 'Referral Commission', 'calculation_type' => 'flat', 'value' => 300]);
+        $role = Role::where('slug', 'manager')->firstOrFail();
+        $base = ['name' => 'Commission Manager', 'email' => 'commission-manager@example.com', 'phone' => '9999999996', 'password' => 'password123', 'password_confirmation' => 'password123', 'roles' => [$role->id], 'is_active' => '1', 'gender' => 'male', 'joining_date' => '2026-01-01', 'employment_type' => 'full_time', 'employment_status' => 'active'];
+
+        $this->actingAs($this->admin())->post('/users', $base + ['salary_structure_type' => 'commission_based'])
+            ->assertSessionHasErrors('commission_type_ids');
+        $this->assertDatabaseMissing('users', ['email' => 'commission-manager@example.com']);
+
+        $this->actingAs($this->admin())->post('/users', $base + ['salary_structure_type' => 'commission_based', 'commission_type_ids' => [$commissionType->id]])
+            ->assertRedirect('/users');
+        $created = User::whereEmail('commission-manager@example.com')->firstOrFail();
+        $this->assertSame('commission_based', $created->salary_structure_type);
+        $this->assertSame('0.00', $created->monthly_salary);
         $this->assertTrue($created->commissionTypes->contains($commissionType));
     }
 

@@ -41,15 +41,18 @@
     </div>
 </section>
 
-<section class="card mt-6 p-6" x-data="{ salaryType: @js(old('salary_type', $user->salary_type ?: 'monthly')) }">
+<section class="card mt-6 p-6" x-data="{ structureType: @js(old('salary_structure_type', $user->salary_structure_type ?: 'fixed')), salaryType: @js(old('salary_type', $user->salary_type ?: 'monthly')) }">
     <h3 class="mb-5 font-bold">Salary Structure</h3>
     <div class="grid gap-5 md:grid-cols-3">
-        <div><label class="form-label">Salary Type *</label><select class="form-input" name="salary_type" x-model="salaryType" required><option value="monthly">Monthly</option><option value="daily">Daily</option></select></div>
-        <div x-show="salaryType === 'monthly'" x-cloak><label class="form-label">Monthly Salary *</label><input class="form-input" type="number" step="0.01" min="0" name="monthly_salary" value="{{ old('monthly_salary', $user->monthly_salary) }}" :required="salaryType === 'monthly'"></div>
-        <div x-show="salaryType === 'daily'" x-cloak><label class="form-label">Daily Salary *</label><input class="form-input" type="number" step="0.01" min="0" name="daily_salary" value="{{ old('daily_salary', $user->daily_salary) }}" :required="salaryType === 'daily'"></div>
-        @foreach(['overtime_rate' => 'Overtime Rate (Daily)', 'travel_allowance' => 'Travel Allowance (Daily)', 'food_allowance' => 'Food Allowance (Daily)', 'other_allowance' => 'Other Allowance (Daily)', 'esi' => 'ESI', 'pf' => 'PF', 'monthly_paid_leave_days' => 'Monthly Paid Leave (Days)'] as $name => $label)
-            @include('master._field', ['model' => $user, 'name' => $name, 'label' => $label, 'type' => 'number'])
-        @endforeach
+        <div><label class="form-label">Salary Structure *</label><select class="form-input" name="salary_structure_type" x-model="structureType" required><option value="fixed">Fixed Salary</option><option value="commission_based">Commission Based</option></select></div>
+        <div x-show="structureType === 'fixed'" x-cloak class="contents">
+            <div><label class="form-label">Salary Type *</label><select class="form-input" name="salary_type" x-model="salaryType" :required="structureType === 'fixed'"><option value="monthly">Monthly</option><option value="daily">Daily</option></select></div>
+            <div x-show="salaryType === 'monthly'" x-cloak><label class="form-label">Monthly Salary *</label><input class="form-input" type="number" step="0.01" min="0" name="monthly_salary" value="{{ old('monthly_salary', $user->monthly_salary) }}" :required="structureType === 'fixed' && salaryType === 'monthly'"></div>
+            <div x-show="salaryType === 'daily'" x-cloak><label class="form-label">Daily Salary *</label><input class="form-input" type="number" step="0.01" min="0" name="daily_salary" value="{{ old('daily_salary', $user->daily_salary) }}" :required="structureType === 'fixed' && salaryType === 'daily'"></div>
+            @foreach(['overtime_rate' => 'Overtime Rate (Daily)', 'travel_allowance' => 'Travel Allowance (Daily)', 'food_allowance' => 'Food Allowance (Daily)', 'other_allowance' => 'Other Allowance (Daily)', 'esi' => 'ESI', 'pf' => 'PF', 'monthly_paid_leave_days' => 'Monthly Paid Leave (Days)'] as $name => $label)
+                @include('master._field', ['model' => $user, 'name' => $name, 'label' => $label, 'type' => 'number'])
+            @endforeach
+        </div>
     </div>
     <div class="mt-6">
         <div class="mb-3 flex items-center justify-between"><h4 class="font-semibold text-slate-700">Commissions</h4><a href="{{ route('commission-types.create') }}" class="text-sm font-semibold text-blue-600">+ Add Commission Type</a></div>

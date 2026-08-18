@@ -32,6 +32,7 @@ class HolidayController extends Controller
             'yearHolidays' => $yearHolidays,
             'prevMonth' => $month->copy()->subMonth()->format('Y-m'),
             'nextMonth' => $month->copy()->addMonth()->format('Y-m'),
+            'indexRoute' => 'holidays.index',
             'canCreate' => $isAdmin || $request->user()->hasPermission('holidays.create'),
             'canDelete' => $isAdmin || $request->user()->hasPermission('holidays.delete'),
         ]);

@@ -1,12 +1,12 @@
-@extends('layouts.app', ['title' => 'Holiday Master'])
+@extends('layouts.app', ['title' => $canCreate ? 'Holiday Master' : 'Holidays'])
 
 @section('content')
 <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-    <div><h2 class="text-2xl font-bold">Holiday Master</h2><p class="mt-1 text-sm text-slate-500">Company holiday calendar.</p></div>
+    <div><h2 class="text-2xl font-bold">{{ $canCreate ? 'Holiday Master' : 'Holidays' }}</h2><p class="mt-1 text-sm text-slate-500">Company holiday calendar.</p></div>
     <div class="flex items-center gap-3">
-        <a href="{{ route('holidays.index', ['month' => $prevMonth]) }}" class="btn-secondary">‹ Prev</a>
+        <a href="{{ route($indexRoute, ['month' => $prevMonth]) }}" class="btn-secondary">‹ Prev</a>
         <span class="min-w-40 text-center font-semibold text-slate-800">{{ $month->format('F Y') }}</span>
-        <a href="{{ route('holidays.index', ['month' => $nextMonth]) }}" class="btn-secondary">Next ›</a>
+        <a href="{{ route($indexRoute, ['month' => $nextMonth]) }}" class="btn-secondary">Next ›</a>
     </div>
 </div>
 

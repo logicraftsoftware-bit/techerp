@@ -20,6 +20,7 @@ use App\Http\Controllers\PartsInventoryController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SelfAttendanceController;
+use App\Http\Controllers\SelfHolidayController;
 use App\Http\Controllers\SelfLeaveController;
 use App\Http\Controllers\ServiceReportController;
 use App\Http\Controllers\ServiceRequestController;
@@ -49,6 +50,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/my-leave/{leave}/edit', [SelfLeaveController::class, 'edit'])->name('my-leave.edit');
     Route::put('/my-leave/{leave}', [SelfLeaveController::class, 'update'])->name('my-leave.update');
     Route::delete('/my-leave/{leave}', [SelfLeaveController::class, 'destroy'])->name('my-leave.destroy');
+    Route::get('/my-holidays', [SelfHolidayController::class, 'index'])->name('my-holidays.index');
     Route::get('/modules/{module}', ModuleController::class)->name('modules.show');
     Route::get('/machine-documents/{document}', [MachineController::class, 'document'])->name('machine-documents.show');
     Route::delete('/machine-documents/{document}', [MachineController::class, 'destroyDocument'])->name('machine-documents.destroy');

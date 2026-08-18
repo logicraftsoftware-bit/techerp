@@ -43,9 +43,10 @@ class UserRequest extends FormRequest
             'employment_type' => ['required', Rule::in(['full_time', 'part_time', 'contract'])],
             'employment_status' => ['required', Rule::in(['active', 'inactive', 'terminated'])],
 
-            'salary_type' => ['required', Rule::in(['monthly', 'daily'])],
-            'monthly_salary' => ['nullable', 'required_if:salary_type,monthly', 'numeric', 'min:0'],
-            'daily_salary' => ['nullable', 'required_if:salary_type,daily', 'numeric', 'min:0'],
+            'salary_structure_type' => ['required', Rule::in(['fixed', 'commission_based'])],
+            'salary_type' => ['nullable', Rule::in(['monthly', 'daily'])],
+            'monthly_salary' => ['nullable', 'numeric', 'min:0'],
+            'daily_salary' => ['nullable', 'numeric', 'min:0'],
             'overtime_rate' => ['nullable', 'numeric', 'min:0'],
             'travel_allowance' => ['nullable', 'numeric', 'min:0'],
             'food_allowance' => ['nullable', 'numeric', 'min:0'],
@@ -69,6 +70,18 @@ class UserRequest extends FormRequest
             $userId = $this->route('user')?->id;
             if ($userId && (int) $this->input('reporting_manager_id') === $userId) {
                 $validator->errors()->add('reporting_manager_id', 'A user cannot report to themselves.');
+            }
+
+            if ($this->input('salary_structure_type') === 'fixed') {
+                if (! $this->filled('salary_type')) {
+                    $validator->errors()->add('salary_type', 'Salary type is required for a fixed salary structure.');
+                } elseif ($this->input('salary_type') === 'monthly' && ! $this->filled('monthly_salary')) {
+                    $validator->errors()->add('monthly_salary', 'Monthly salary is required.');
+                } elseif ($this->input('salary_type') === 'daily' && ! $this->filled('daily_salary')) {
+                    $validator->errors()->add('daily_salary', 'Daily salary is required.');
+                }
+            } elseif ($this->input('salary_structure_type') === 'commission_based' && empty($this->input('commission_type_ids'))) {
+                $validator->errors()->add('commission_type_ids', 'Select at least one commission type for a commission-based salary structure.');
             }
         });
     }
