@@ -30,6 +30,7 @@ use App\Http\Controllers\UserPermissionController;
 use App\Http\Controllers\WorkAssignmentController;
 use App\Http\Controllers\WorkforceController;
 use App\Http\Controllers\WorkStatusController;
+use App\Http\Middleware\RunMissedCheckInMarker;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -37,7 +38,7 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
 });
-Route::middleware(['auth', 'active'])->group(function () {
+Route::middleware(['auth', 'active', RunMissedCheckInMarker::class])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/my-calendar', [SelfCalendarController::class, 'index'])->name('my-calendar.index');

@@ -58,7 +58,9 @@ class MyCalendarTest extends TestCase
         Carbon::setTestNow('2026-08-19 11:31:00');
 
         $this->actingAs($user)->post(route('my-calendar.check-in'))->assertStatus(422);
-        $this->assertDatabaseMissing('attendances', ['user_id' => $user->id]);
+        // The no-cron auto-marker (triggered by the request itself) may have already recorded
+        // the day as absent/leave -- either way, self check-in must never succeed past the deadline.
+        $this->assertDatabaseMissing('attendances', ['user_id' => $user->id, 'attendance_status' => 'present']);
     }
 
     public function test_check_in_is_allowed_within_the_grace_period(): void

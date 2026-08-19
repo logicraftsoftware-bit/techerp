@@ -46,11 +46,19 @@
                     $isFuture = $dateObj->isFuture();
                     $cellStyle = $holiday ? 'border-rose-300 bg-rose-50 text-rose-700' : ($att ? ($statusStyles[$att->attendance_status] ?? 'border-slate-200') : 'border-slate-200');
                     $ring = $isToday ? 'ring-2 ring-offset-1 ring-blue-500' : '';
+                    $statusNote = null;
+                    if ($att && $att->attendance_status === 'present') {
+                        $in = $att->check_in ? \Illuminate\Support\Carbon::parse($att->check_in)->format('h:i A') : null;
+                        $out = $att->check_out ? \Illuminate\Support\Carbon::parse($att->check_out)->format('h:i A') : null;
+                        $statusNote = $in ? 'In '.$in.($out ? ' · Out '.$out : '') : 'Present';
+                    } elseif ($att) {
+                        $statusNote = ucfirst($att->attendance_status);
+                    }
                 @endphp
                 @if($isToday)
                     <button type="button" @click="attendanceModalOpen = true" class="min-h-24 rounded-xl border p-2 text-left text-sm transition {{ $cellStyle }} {{ $ring }}">
                         <span class="font-semibold">{{ $day }}</span>
-                        @if($holiday)<p class="mt-1 text-xs font-medium">{{ $holiday->name ?: 'Holiday' }}</p>@elseif($att)<p class="mt-1 text-xs font-medium">{{ ucfirst($att->attendance_status) }}</p>@endif
+                        @if($holiday)<p class="mt-1 text-xs font-medium">{{ $holiday->name ?: 'Holiday' }}</p>@elseif($statusNote)<p class="mt-1 text-xs font-medium">{{ $statusNote }}</p>@endif
                     </button>
                 @elseif($holiday)
                     <div class="min-h-24 rounded-xl border p-2 text-sm {{ $cellStyle }}">
@@ -60,12 +68,12 @@
                 @elseif($isFuture)
                     <button type="button" @click="leaveModalOpen = true; selectedDate = '{{ $dateKey }}'; selectedLabel = '{{ $dateObj->format('d M Y') }}'" class="min-h-24 rounded-xl border p-2 text-left text-sm transition hover:border-blue-300 hover:bg-blue-50 {{ $cellStyle }}">
                         <span class="font-semibold">{{ $day }}</span>
-                        @if($att)<p class="mt-1 text-xs font-medium">{{ ucfirst($att->attendance_status) }}</p>@endif
+                        @if($statusNote)<p class="mt-1 text-xs font-medium">{{ $statusNote }}</p>@endif
                     </button>
                 @else
                     <div class="min-h-24 rounded-xl border p-2 text-sm {{ $cellStyle }}">
                         <span class="font-semibold">{{ $day }}</span>
-                        @if($att)<p class="mt-1 text-xs font-medium">{{ ucfirst($att->attendance_status) }}</p>@endif
+                        @if($statusNote)<p class="mt-1 text-xs font-medium">{{ $statusNote }}</p>@endif
                     </div>
                 @endif
             @endfor

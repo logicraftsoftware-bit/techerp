@@ -63,14 +63,16 @@ class MarkMissedCheckInsCommandTest extends TestCase
         $this->assertDatabaseHas('attendances', ['user_id' => $user->id, 'attendance_status' => 'absent']);
     }
 
-    public function test_it_skips_sundays(): void
+    public function test_sunday_is_not_automatically_skipped(): void
     {
+        // This business has no fixed weekly holiday -- staff choose their own weekly off day,
+        // deducted from the same monthly paid-leave quota as any other missed day.
         $user = User::factory()->create(['expected_check_in_time' => '11:00', 'monthly_paid_leave_days' => 1]);
         Carbon::setTestNow('2026-08-16 11:31:00'); // Sunday
 
         $this->artisan('attendance:mark-missed-checkins');
 
-        $this->assertDatabaseMissing('attendances', ['user_id' => $user->id]);
+        $this->assertDatabaseHas('attendances', ['user_id' => $user->id, 'attendance_status' => 'leave']);
     }
 
     public function test_it_skips_holidays(): void
