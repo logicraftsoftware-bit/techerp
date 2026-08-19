@@ -20,7 +20,7 @@
         @forelse($records as $record)
             <tr>
                 <td class="p-4"><a href="{{ route('service-requests.show', $record) }}" class="font-semibold text-blue-600">{{ $record->request_code }}</a><div class="mt-1 text-slate-700">{{ $record->subject }}</div></td>
-                <td class="p-4"><span class="font-medium">{{ $record->customer->customer_name }}</span><div class="text-xs text-slate-400">{{ $record->customer->mobile }}</div></td>
+                <td class="p-4"><span class="font-medium">{{ $record->customer?->customer_name ?? 'Deleted customer' }}</span><div class="text-xs text-slate-400">{{ $record->customer?->mobile }}</div></td>
                 <td class="p-4">{{ str($record->service_type)->replace('_', ' ')->title() }}<div class="text-xs text-slate-400">{{ $record->machine?->machine_name ?? $record->product_name }}</div></td>
                 <td class="p-4"><span class="status-badge {{ $record->priority === 'urgent' ? 'status-danger' : ($record->priority === 'high' ? 'status-warning' : 'status-muted') }}">{{ ucfirst($record->priority) }}</span></td>
                 <td class="p-4">{{ $record->preferred_date?->format('d M Y') ?? '—' }}<div class="text-xs text-slate-400">{{ $record->preferred_time ? date('g:i A', strtotime($record->preferred_time)) : '' }}</div></td>

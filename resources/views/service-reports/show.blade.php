@@ -7,7 +7,7 @@
         <a href="{{ route('service-reports.index') }}" class="btn-secondary">Back</a>
     </div>
     <div class="grid gap-5 md:grid-cols-3">
-        <section class="card p-5"><p class="text-xs uppercase text-slate-400">Customer</p><p class="mt-2 font-semibold">{{ $serviceRequest->customer->customer_name }}</p><p class="text-sm">{{ $serviceRequest->contact_phone }}</p></section>
+        <section class="card p-5"><p class="text-xs uppercase text-slate-400">Customer</p><p class="mt-2 font-semibold">{{ $serviceRequest->customer?->customer_name ?? 'Deleted customer' }}</p><p class="text-sm">{{ $serviceRequest->contact_phone }}</p></section>
         <section class="card p-5"><p class="text-xs uppercase text-slate-400">Machine / Service</p><p class="mt-2 font-semibold">{{ $serviceRequest->machine?->machine_name ?? $serviceRequest->product_name }}</p><p class="text-sm">{{ str($serviceRequest->service_type)->replace('_', ' ')->title() }}</p></section>
         <section class="card p-5"><p class="text-xs uppercase text-slate-400">Current Status</p><p class="mt-2 font-semibold">{{ str($serviceRequest->status)->replace('_', ' ')->title() }}</p><p class="text-sm">Created {{ $serviceRequest->created_at->format('d M Y') }}</p></section>
     </div>

@@ -111,6 +111,22 @@ class ServiceRequestTest extends TestCase
         $this->get(route('service-requests.show', $request))->assertOk()->assertSee('Referring Tech');
     }
 
+    public function test_index_and_show_still_render_after_the_customer_is_deleted(): void
+    {
+        // Customers are soft-deleted; a service request referencing one must not 500 the
+        // list/detail pages afterwards -- it should keep showing the customer's own record.
+        $customer = $this->customer('Acme');
+        $machine = Machine::create(['machine_name' => 'Press', 'machine_code' => 'PR777777', 'status' => 'active']);
+        $data = $this->baseData($customer) + ['request_type' => 'existing_service', 'service_type' => 'amc', 'machine_id' => $machine->id];
+        $this->post(route('service-requests.store'), $data)->assertRedirect(route('service-requests.index'));
+        $request = ServiceRequest::firstOrFail();
+
+        $customer->delete();
+
+        $this->get(route('service-requests.index'))->assertOk()->assertSee('Acme');
+        $this->get(route('service-requests.show', $request))->assertOk()->assertSee('Acme');
+    }
+
     public function test_service_request_form_has_searchable_customer_machine_and_read_only_product_fields(): void
     {
         $this->get(route('service-requests.create'))->assertOk()

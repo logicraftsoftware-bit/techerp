@@ -1,7 +1,7 @@
 @extends('layouts.app', ['title' => $assignment->assignment_code.' Status'])
 @section('content')
 <div class="mx-auto max-w-5xl">
-    <div class="mb-6 flex justify-between"><div><p class="font-semibold text-blue-600">{{ $assignment->assignment_code }}</p><h2 class="text-2xl font-bold">Work Status Timeline</h2><p class="text-sm text-slate-500">{{ $assignment->serviceRequest->customer->customer_name }} · {{ $assignment->technician->name }}</p></div><a href="{{ route('work-status.index') }}" class="btn-secondary">Back</a></div>
+    <div class="mb-6 flex justify-between"><div><p class="font-semibold text-blue-600">{{ $assignment->assignment_code }}</p><h2 class="text-2xl font-bold">Work Status Timeline</h2><p class="text-sm text-slate-500">{{ $assignment->serviceRequest->customer?->customer_name ?? 'Deleted customer' }} · {{ $assignment->technician->name }}</p></div><a href="{{ route('work-status.index') }}" class="btn-secondary">Back</a></div>
     <form method="POST" action="{{ route('work-status.update', $assignment) }}" class="card mb-6 grid gap-4 p-5 md:grid-cols-[240px_1fr_auto]">@csrf @method('PATCH')
         <select name="status" class="form-input">@foreach(['scheduled','in_progress','completed','cancelled'] as $status)<option value="{{ $status }}" @selected($assignment->status === $status)>{{ str($status)->replace('_', ' ')->title() }}</option>@endforeach</select>
         <input name="remarks" class="form-input" placeholder="Status update remarks"><button class="btn-primary justify-center">Update Status</button>
