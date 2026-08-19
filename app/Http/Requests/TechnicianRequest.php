@@ -21,6 +21,7 @@ class TechnicianRequest extends FormRequest
             'joining_date' => ['required', 'date'], 'department_id' => ['nullable', 'exists:departments,id'], 'designation' => ['nullable', 'max:100'], 'reporting_manager' => ['nullable', 'string', 'regex:/^(technician|user):\d+$/'], 'employment_type' => ['required', Rule::in(['full_time', 'part_time', 'contract'])], 'status' => ['required', Rule::in(['active', 'inactive', 'terminated'])],
             'salary_structure_type' => ['required', Rule::in(['fixed', 'commission_based'])],
             'salary_type' => ['nullable', Rule::in(['monthly', 'daily'])], 'monthly_salary' => ['nullable', 'numeric', 'min:0'], 'daily_salary' => ['nullable', 'numeric', 'min:0'], 'overtime_rate' => ['nullable', 'numeric', 'min:0'], 'travel_allowance' => ['nullable', 'numeric', 'min:0'], 'food_allowance' => ['nullable', 'numeric', 'min:0'], 'other_allowance' => ['nullable', 'numeric', 'min:0'], 'pf' => ['nullable', 'numeric', 'min:0'], 'esi' => ['nullable', 'numeric', 'min:0'], 'monthly_paid_leave_days' => ['nullable', 'integer', 'min:0'], 'skills' => ['nullable', 'array'], 'skills.*' => ['exists:skills,id'], 'commission_type_ids' => ['nullable', 'array'], 'commission_type_ids.*' => ['integer', 'exists:commission_types,id'],
+            'expected_check_in_time' => ['nullable', 'date_format:H:i'], 'expected_check_out_time' => ['nullable', 'date_format:H:i'],
         ];
     }
 

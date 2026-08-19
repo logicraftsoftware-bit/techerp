@@ -56,6 +56,8 @@ class UserRequest extends FormRequest
             'monthly_paid_leave_days' => ['nullable', 'integer', 'min:0'],
             'commission_type_ids' => ['nullable', 'array'],
             'commission_type_ids.*' => ['integer', 'exists:commission_types,id'],
+            'expected_check_in_time' => ['nullable', 'date_format:H:i'],
+            'expected_check_out_time' => ['nullable', 'date_format:H:i'],
         ];
     }
 

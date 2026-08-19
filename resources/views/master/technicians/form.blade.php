@@ -35,6 +35,8 @@
             <div><label class="form-label">Reporting Manager</label><select class="form-input" name="reporting_manager"><option value="">None</option><optgroup label="Staff">@foreach($managers as $manager)<option value="technician:{{ $manager->id }}" @selected($selectedManager === 'technician:'.$manager->id)>{{ $manager->name }} ({{ $manager->employee_code }})</option>@endforeach</optgroup><optgroup label="Admin / Users">@foreach($adminUsers as $user)<option value="user:{{ $user->id }}" @selected($selectedManager === 'user:'.$user->id)>{{ $user->name }} ({{ $user->roles->first()?->name ?? 'User' }})</option>@endforeach</optgroup></select></div>
             @include('master._field', ['model' => $technician, 'name' => 'employment_type', 'label' => 'Employment Type', 'type' => 'select', 'required' => true, 'options' => ['full_time' => 'Full Time', 'part_time' => 'Part Time', 'contract' => 'Contract']])
             @include('master._field', ['model' => $technician, 'name' => 'status', 'label' => 'Status', 'type' => 'select', 'required' => true, 'options' => ['active' => 'Active', 'inactive' => 'Inactive', 'terminated' => 'Terminated']])
+            @include('master._field', ['model' => $technician, 'name' => 'expected_check_in_time', 'label' => 'Expected Check-In Time', 'type' => 'time'])
+            @include('master._field', ['model' => $technician, 'name' => 'expected_check_out_time', 'label' => 'Expected Check-Out Time', 'type' => 'time'])
         </div>
     </section>
 

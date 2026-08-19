@@ -38,6 +38,8 @@
         <div><label class="form-label">Reporting Manager</label><select class="form-input" name="reporting_manager_id"><option value="">None</option>@foreach($managers as $manager)<option value="{{ $manager->id }}" @selected(old('reporting_manager_id', $user->reporting_manager_id) == $manager->id)>{{ $manager->name }} ({{ $manager->roles->first()?->name ?? 'User' }})</option>@endforeach</select></div>
         @include('master._field', ['model' => $user, 'name' => 'employment_type', 'label' => 'Employment Type', 'type' => 'select', 'required' => true, 'options' => ['' => 'Select', 'full_time' => 'Full Time', 'part_time' => 'Part Time', 'contract' => 'Contract']])
         @include('master._field', ['model' => $user, 'name' => 'employment_status', 'label' => 'Employment Status', 'type' => 'select', 'required' => true, 'options' => ['active' => 'Active', 'inactive' => 'Inactive', 'terminated' => 'Terminated']])
+        @include('master._field', ['model' => $user, 'name' => 'expected_check_in_time', 'label' => 'Expected Check-In Time', 'type' => 'time'])
+        @include('master._field', ['model' => $user, 'name' => 'expected_check_out_time', 'label' => 'Expected Check-Out Time', 'type' => 'time'])
     </div>
 </section>
 

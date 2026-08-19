@@ -24,9 +24,7 @@
                     $canSeeEverything = auth()->user()->hasRole('super-admin');
                 @endphp
                 @unless($canSeeEverything)
-                    <a href="{{ route('my-attendance.show') }}" class="nav-link mb-3 py-3.5 {{ request()->routeIs('my-attendance.*') ? 'nav-link-active' : '' }}"><svg class="size-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><span class="text-base">My Attendance</span></a>
-                    <a href="{{ route('my-leave.index') }}" class="nav-link mb-3 py-3.5 {{ request()->routeIs('my-leave.*') ? 'nav-link-active' : '' }}"><svg class="size-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><span class="text-base">My Leave</span></a>
-                    <a href="{{ route('my-holidays.index') }}" class="nav-link mb-3 py-3.5 {{ request()->routeIs('my-holidays.*') ? 'nav-link-active' : '' }}"><svg class="size-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><circle cx="12" cy="16" r="2"/></svg><span class="text-base">Holidays</span></a>
+                    <a href="{{ route('my-calendar.index') }}" class="nav-link mb-3 py-3.5 {{ request()->routeIs('my-calendar.*') ? 'nav-link-active' : '' }}"><svg class="size-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><span class="text-base">My Calendar</span></a>
                 @endunless
                 @foreach(config('crm.navigation') as $group => $items)
                     @php
