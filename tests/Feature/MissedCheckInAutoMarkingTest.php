@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Attendance;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\MissedCheckInMarker;
 use Carbon\Carbon;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -55,5 +56,20 @@ class MissedCheckInAutoMarkingTest extends TestCase
         Attendance::where('user_id', $late->id)->delete();
         $this->actingAs($admin)->get(route('dashboard'))->assertOk();
         $this->assertSame(0, Attendance::where('user_id', $late->id)->count());
+    }
+
+    public function test_a_marker_failure_never_takes_down_the_page(): void
+    {
+        // e.g. a pending migration leaves a column the marker queries missing -- the page
+        // itself (dashboard, service requests, anything in the authenticated group) must
+        // still render rather than surfacing as a site-wide 500.
+        $this->mock(MissedCheckInMarker::class, function ($mock) {
+            $mock->shouldReceive('run')->once()->andThrow(new \RuntimeException('simulated schema drift'));
+        });
+
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::where('slug', 'super-admin')->firstOrFail());
+
+        $this->actingAs($admin)->get(route('dashboard'))->assertOk();
     }
 }
