@@ -158,9 +158,23 @@ class MyCalendarTest extends TestCase
 
         $response->assertOk()
             ->assertSee('Independence Day')
+            ->assertSee('In 09:00 AM')
             ->assertSee('bg-emerald-50', false)
             ->assertSee('bg-orange-50', false)
             ->assertSee('bg-amber-50', false)
             ->assertSee('bg-rose-50', false);
+    }
+
+    public function test_calendar_offers_a_year_wide_holiday_list(): void
+    {
+        $user = User::factory()->create();
+        Holiday::create(['holiday_date' => '2026-08-15', 'name' => 'Independence Day']);
+        Holiday::create(['holiday_date' => '2026-10-02', 'name' => 'Gandhi Jayanti']);
+
+        $this->actingAs($user)->get(route('my-calendar.index', ['month' => '2026-08']))
+            ->assertOk()
+            ->assertSee('View Holiday List')
+            ->assertSee('Independence Day')
+            ->assertSee('Gandhi Jayanti');
     }
 }

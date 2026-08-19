@@ -34,6 +34,7 @@ class SelfCalendarController extends Controller
             ->get()->keyBy(fn ($a) => $a->attendance_date->format('Y-m-d'));
         $today = Attendance::where('user_id', $userId)->whereDate('attendance_date', today())->first();
         $leaves = TechnicianLeave::where('user_id', $userId)->latest()->paginate(10);
+        $yearHolidays = Holiday::whereYear('holiday_date', $month->year)->orderBy('holiday_date')->get();
 
         return view('workforce.my-calendar', [
             'month' => $month,
@@ -41,6 +42,7 @@ class SelfCalendarController extends Controller
             'attendance' => $attendance,
             'today' => $today,
             'leaves' => $leaves,
+            'yearHolidays' => $yearHolidays,
             'prevMonth' => $month->copy()->subMonth()->format('Y-m'),
             'nextMonth' => $month->copy()->addMonth()->format('Y-m'),
             'checkInDeadline' => $this->checkInDeadline($request->user()),

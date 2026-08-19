@@ -10,15 +10,18 @@
     </div>
 </div>
 
-<div class="mb-5 flex flex-wrap gap-4 text-xs font-medium text-slate-500">
-    <span class="flex items-center gap-1.5"><span class="size-3 rounded-full bg-emerald-400"></span> Present</span>
-    <span class="flex items-center gap-1.5"><span class="size-3 rounded-full bg-orange-400"></span> Absent</span>
-    <span class="flex items-center gap-1.5"><span class="size-3 rounded-full bg-amber-300"></span> Paid Leave</span>
-    <span class="flex items-center gap-1.5"><span class="size-3 rounded-full bg-rose-400"></span> Holiday</span>
-    <span class="flex items-center gap-1.5"><span class="size-3 rounded-full border-2 border-blue-500"></span> Today</span>
-</div>
+<div x-data="{ attendanceModalOpen: false, leaveModalOpen: false, holidayModalOpen: false, selectedDate: '', selectedLabel: '' }">
+    <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex flex-wrap gap-4 text-xs font-medium text-slate-500">
+            <span class="flex items-center gap-1.5"><span class="size-3 rounded-full bg-emerald-400"></span> Present</span>
+            <span class="flex items-center gap-1.5"><span class="size-3 rounded-full bg-orange-400"></span> Absent</span>
+            <span class="flex items-center gap-1.5"><span class="size-3 rounded-full bg-amber-300"></span> Paid Leave</span>
+            <span class="flex items-center gap-1.5"><span class="size-3 rounded-full bg-rose-400"></span> Holiday</span>
+            <span class="flex items-center gap-1.5"><span class="size-3 rounded-full border-2 border-blue-500"></span> Today</span>
+        </div>
+        <button type="button" @click="holidayModalOpen = true" class="btn-secondary">View Holiday List</button>
+    </div>
 
-<div x-data="{ attendanceModalOpen: false, leaveModalOpen: false, selectedDate: '', selectedLabel: '' }">
     <div class="card p-5">
         @php
             $firstDayOfWeek = (int) $month->copy()->startOfMonth()->format('w');
@@ -46,19 +49,19 @@
                     $isFuture = $dateObj->isFuture();
                     $cellStyle = $holiday ? 'border-rose-300 bg-rose-50 text-rose-700' : ($att ? ($statusStyles[$att->attendance_status] ?? 'border-slate-200') : 'border-slate-200');
                     $ring = $isToday ? 'ring-2 ring-offset-1 ring-blue-500' : '';
-                    $statusNote = null;
+                    $statusLines = [];
                     if ($att && $att->attendance_status === 'present') {
                         $in = $att->check_in ? \Illuminate\Support\Carbon::parse($att->check_in)->format('h:i A') : null;
                         $out = $att->check_out ? \Illuminate\Support\Carbon::parse($att->check_out)->format('h:i A') : null;
-                        $statusNote = $in ? 'In '.$in.($out ? ' · Out '.$out : '') : 'Present';
+                        $statusLines = $in ? array_filter(['In '.$in, $out ? 'Out '.$out : null]) : ['Present'];
                     } elseif ($att) {
-                        $statusNote = ucfirst($att->attendance_status);
+                        $statusLines = [ucfirst($att->attendance_status)];
                     }
                 @endphp
                 @if($isToday)
                     <button type="button" @click="attendanceModalOpen = true" class="min-h-24 rounded-xl border p-2 text-left text-sm transition {{ $cellStyle }} {{ $ring }}">
                         <span class="font-semibold">{{ $day }}</span>
-                        @if($holiday)<p class="mt-1 text-xs font-medium">{{ $holiday->name ?: 'Holiday' }}</p>@elseif($statusNote)<p class="mt-1 text-xs font-medium">{{ $statusNote }}</p>@endif
+                        @if($holiday)<p class="mt-1 text-xs font-medium">{{ $holiday->name ?: 'Holiday' }}</p>@else @foreach($statusLines as $line)<p class="mt-0.5 text-xs font-medium leading-tight">{{ $line }}</p>@endforeach @endif
                     </button>
                 @elseif($holiday)
                     <div class="min-h-24 rounded-xl border p-2 text-sm {{ $cellStyle }}">
@@ -68,12 +71,12 @@
                 @elseif($isFuture)
                     <button type="button" @click="leaveModalOpen = true; selectedDate = '{{ $dateKey }}'; selectedLabel = '{{ $dateObj->format('d M Y') }}'" class="min-h-24 rounded-xl border p-2 text-left text-sm transition hover:border-blue-300 hover:bg-blue-50 {{ $cellStyle }}">
                         <span class="font-semibold">{{ $day }}</span>
-                        @if($statusNote)<p class="mt-1 text-xs font-medium">{{ $statusNote }}</p>@endif
+                        @foreach($statusLines as $line)<p class="mt-0.5 text-xs font-medium leading-tight">{{ $line }}</p>@endforeach
                     </button>
                 @else
                     <div class="min-h-24 rounded-xl border p-2 text-sm {{ $cellStyle }}">
                         <span class="font-semibold">{{ $day }}</span>
-                        @if($statusNote)<p class="mt-1 text-xs font-medium">{{ $statusNote }}</p>@endif
+                        @foreach($statusLines as $line)<p class="mt-0.5 text-xs font-medium leading-tight">{{ $line }}</p>@endforeach
                     </div>
                 @endif
             @endfor
@@ -146,6 +149,28 @@
                 <button class="btn-primary">Save</button>
             </div>
         </form>
+    </div>
+
+    <div x-cloak x-show="holidayModalOpen" x-transition class="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-4" @keydown.escape.window="holidayModalOpen = false" @click.self="holidayModalOpen = false">
+        <div class="w-full max-w-lg max-h-[80vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div class="flex items-start justify-between"><h3 class="text-lg font-bold text-slate-900">{{ $month->year }} Holidays</h3><button type="button" class="text-slate-400 hover:text-slate-600" @click="holidayModalOpen = false">✕</button></div>
+            @php $groupedHolidays = $yearHolidays->groupBy(fn ($h) => $h->holiday_date->format('F')); @endphp
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                @forelse($groupedHolidays as $monthName => $monthHolidays)
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ $monthName }}</p>
+                        <div class="mt-1 divide-y">
+                            @foreach($monthHolidays as $holiday)
+                                <p class="py-1.5 text-sm"><span class="font-semibold text-rose-600">{{ $holiday->holiday_date->format('d M') }}</span> <span class="text-slate-500">— {{ $holiday->name ?: 'Holiday' }}</span></p>
+                            @endforeach
+                        </div>
+                    </div>
+                @empty
+                    <p class="py-6 text-center text-sm text-slate-400 sm:col-span-2">No holidays added for {{ $month->year }}.</p>
+                @endforelse
+            </div>
+            <div class="mt-6 flex justify-end"><button type="button" class="btn-secondary" @click="holidayModalOpen = false">Close</button></div>
+        </div>
     </div>
 </div>
 @endsection
