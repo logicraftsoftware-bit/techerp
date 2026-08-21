@@ -36,7 +36,7 @@ return [
             ['attendance', 'Attendance', 'Daily, monthly and bulk attendance'],
             ['leave', 'Leave Management', 'Leave types, requests and approvals'],
             ['holidays', 'Holiday Master', 'Company holiday calendar'],
-            ['salary', 'Technician Salary', 'Payroll calculation and salary slips'],
+            ['salary', 'Staff Salary', 'Payroll calculation and salary slips'],
             ['commission-types', 'Commission Type Master', 'Commission types used in salary structure'],
             ['expenses', 'Technician Expenses', 'Claims, receipts and approvals'],
         ],

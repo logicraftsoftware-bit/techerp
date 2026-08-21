@@ -26,7 +26,7 @@ class DashboardService
             ['label' => 'On Leave', 'value' => $this->attendance('leave'), 'tone' => 'pink'],
             ['label' => 'Low Stock Parts', 'value' => $this->lowStock(), 'tone' => 'red'],
             ['label' => 'Service Revenue', 'value' => $this->money('machine_service_histories', 'service_cost', $month), 'tone' => 'emerald', 'money' => true],
-            ['label' => 'Technician Salary', 'value' => $this->money('salary_records', 'net_salary', $month), 'tone' => 'slate', 'money' => true],
+            ['label' => 'Staff Salary', 'value' => $this->money('salary_records', 'net_salary', $month), 'tone' => 'slate', 'money' => true],
             ['label' => 'Monthly Expenses', 'value' => $this->money('expenses', 'amount', $month), 'tone' => 'rose', 'money' => true],
         ];
 
