@@ -31,17 +31,25 @@
             <tr x-cloak x-show="expanded === {{ $record->id }}" x-transition>
                 <td colspan="10" class="border-t border-blue-100 bg-blue-50/40 p-5">
                     <div class="mb-3 flex items-center justify-between"><div><h3 class="font-semibold text-slate-900">AMC Service Requests</h3><p class="text-xs text-slate-500">{{ $record->serviceRequests->count() }} of {{ $record->service_count }} service slots created</p></div></div>
-                    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    <div class="space-y-2">
                         @foreach(range(1, $record->service_count) as $serviceNumber)
                             @php($existingRequest = $record->serviceRequests->firstWhere('amc_service_number', $serviceNumber))
-                            <div class="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-3">
-                                <span class="flex-1 text-sm font-semibold text-slate-700">Service Request - {{ $serviceNumber }}</span>
-                                @if($existingRequest)
-                                    <a href="{{ route('service-requests.show', $existingRequest) }}" class="btn-secondary px-3 py-2 text-xs">View {{ $existingRequest->request_code }}</a>
+                            @php($completedAssignment = $existingRequest?->workAssignments->firstWhere('status', 'completed'))
+                            <div class="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm">
+                                <span class="font-semibold text-slate-800">Service Request - {{ $serviceNumber }}</span>
+                                @if($existingRequest && $completedAssignment)
+                                    <span class="text-emerald-700">Completed on {{ $completedAssignment->completed_at?->format('d M Y') ?? $completedAssignment->updated_at->format('d M Y') }}</span>
+                                    <span class="text-slate-300">|</span><span>Technician: <b>{{ $completedAssignment->technician->name }}</b></span>
+                                    <span class="text-slate-300">|</span><span>Total Bill: <b>₹{{ number_format($completedAssignment->bill_total, 2) }}</b></span>
+                                    <span class="ml-auto flex gap-2"><a href="{{ route('assignments.bill', $completedAssignment) }}" class="table-action text-blue-600">Download Bill</a><a href="{{ route('assignments.job-card', $completedAssignment) }}" class="table-action text-blue-600">Download Job Card</a><a href="{{ route('service-requests.show', $existingRequest) }}" class="table-action">View Details</a></span>
+                                @elseif($existingRequest)
+                                    <span class="status-badge status-warning">{{ str($existingRequest->status)->replace('_', ' ')->title() }}</span>
+                                    <span class="text-slate-500">{{ $existingRequest->request_code }}</span>
+                                    <a href="{{ route('service-requests.show', $existingRequest) }}" class="table-action ml-auto">View Request</a>
                                 @elseif($canCreateServiceRequest)
-                                    <a href="{{ route('service-requests.create', ['amc_tagging' => $record->id, 'service_number' => $serviceNumber]) }}" class="btn-primary px-3 py-2 text-xs">Create Service Request</a>
+                                    <a href="{{ route('service-requests.create', ['amc_tagging' => $record->id, 'service_number' => $serviceNumber]) }}" class="btn-primary ml-auto px-3 py-2 text-xs">Create Service Request</a>
                                 @else
-                                    <span class="text-xs text-slate-400">Not created</span>
+                                    <span class="ml-auto text-xs text-slate-400">Not created</span>
                                 @endif
                             </div>
                         @endforeach

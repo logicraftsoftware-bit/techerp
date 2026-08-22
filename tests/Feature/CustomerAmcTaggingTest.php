@@ -11,7 +11,9 @@ use App\Models\MachineCategory;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\ServiceRequest;
+use App\Models\Technician;
 use App\Models\User;
+use App\Models\WorkAssignment;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -147,5 +149,22 @@ class CustomerAmcTaggingTest extends TestCase
         $this->actingAs($this->admin)->post(route('service-requests.store'), $payload)
             ->assertSessionHasErrors('amc_service_number');
         $this->assertSame(1, ServiceRequest::count());
+
+        $technician = Technician::create(['name' => 'AMC Technician', 'mobile' => '8888888877', 'joining_date' => '2026-01-01', 'employment_type' => 'full_time', 'status' => 'active', 'salary_type' => 'monthly']);
+        $assignment = WorkAssignment::create([
+            'service_request_id' => $serviceRequest->id, 'technician_id' => $technician->id,
+            'assignment_role' => 'primary', 'scheduled_date' => today(), 'start_time' => '10:00',
+            'end_time' => '12:00', 'priority' => 'normal', 'status' => 'completed',
+            'service_address' => $this->customer->address, 'assigned_by' => $this->admin->id,
+        ]);
+        $assignment->statusHistories()->create(['from_status' => 'in_progress', 'to_status' => 'completed', 'remarks' => 'Work completed', 'changed_by' => $this->admin->id]);
+        $serviceRequest->update(['status' => 'completed']);
+
+        $this->actingAs($this->admin)->get(route('customer-amc-taggings.index'))->assertOk()
+            ->assertSee('Completed on')->assertSee('AMC Technician')->assertSee('Total Bill')
+            ->assertSee('Download Bill')->assertSee('Download Job Card');
+        $this->actingAs($this->admin)->get(route('assignments.bill', $assignment))
+            ->assertOk()->assertHeader('content-type', 'application/pdf')
+            ->assertDownload($assignment->assignment_code.'-bill.pdf');
     }
 }

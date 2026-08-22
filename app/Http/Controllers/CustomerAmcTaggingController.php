@@ -18,7 +18,7 @@ class CustomerAmcTaggingController extends Controller
     {
         abort_unless($request->user()->hasRole('super-admin', 'admin') || $request->user()->hasPermission('customer-amc-taggings.view'), 403);
 
-        $records = CustomerAmcTagging::with(['customer', 'machine', 'amcPlan', 'serviceRequests'])
+        $records = CustomerAmcTagging::with(['customer', 'machine', 'amcPlan', 'serviceRequests.workAssignments.technician', 'serviceRequests.workAssignments.statusHistories', 'serviceRequests.workAssignments.jobParts'])
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($nested) use ($search) {
                     $nested->whereHas('customer', fn ($q) => $q->where('customer_name', 'like', "%{$search}%")->orWhere('customer_code', 'like', "%{$search}%"))

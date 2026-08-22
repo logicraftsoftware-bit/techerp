@@ -50,4 +50,20 @@ class WorkAssignment extends Model
     {
         return $this->hasMany(WorkStatusHistory::class)->latest();
     }
+
+    public function jobParts(): HasMany
+    {
+        return $this->hasMany(JobPart::class);
+    }
+
+    public function getBillTotalAttribute(): float
+    {
+        return (float) $this->jobParts->sum(fn (JobPart $jobPart) => $jobPart->quantity * (float) $jobPart->rate * (1 + ((float) $jobPart->tax_percent / 100)));
+    }
+
+    public function getCompletedAtAttribute()
+    {
+        return $this->statusHistories->firstWhere('to_status', 'completed')?->created_at
+            ?? ($this->status === 'completed' ? $this->updated_at : null);
+    }
 }

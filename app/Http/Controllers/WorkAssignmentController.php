@@ -17,7 +17,7 @@ class WorkAssignmentController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:assignments,view')->only(['index', 'show', 'jobCard']);
+        $this->middleware('permission:assignments,view')->only(['index', 'show']);
         $this->middleware('permission:assignments,create')->only(['create', 'store']);
         $this->middleware('permission:assignments,update')->only(['edit', 'update']);
         $this->middleware('permission:assignments,delete')->only(['destroy']);
@@ -80,6 +80,7 @@ class WorkAssignmentController extends Controller
 
     public function jobCard(Request $request, WorkAssignment $assignment): Response
     {
+        $this->authorizeDocumentView($request);
         $assignment->load(['serviceRequest.customer', 'serviceRequest.machine', 'serviceRequest.amcPlans', 'technician', 'statusHistories.changedBy']);
         $jobParts = JobPart::where('work_assignment_id', $assignment->id)->with('part')->get();
         $logo = $this->dataUri(public_path('images/fieldservice-logo.png'), 'image/png');
@@ -90,9 +91,26 @@ class WorkAssignmentController extends Controller
         return $request->boolean('view') ? $pdf->stream($filename) : $pdf->download($filename);
     }
 
+    public function bill(Request $request, WorkAssignment $assignment): Response
+    {
+        $this->authorizeDocumentView($request);
+        abort_unless($assignment->status === 'completed', 404);
+        $assignment->load(['serviceRequest.customer', 'serviceRequest.machine', 'serviceRequest.amcPlans', 'technician', 'statusHistories', 'jobParts.part']);
+        $logo = $this->dataUri(public_path('images/fieldservice-logo.png'), 'image/png');
+        $pdf = Pdf::loadView('work-assignments.bill', compact('assignment', 'logo'))->setPaper('a4', 'portrait');
+        $filename = $assignment->assignment_code.'-bill.pdf';
+
+        return $request->boolean('view') ? $pdf->stream($filename) : $pdf->download($filename);
+    }
+
     private function dataUri(string $path, string $mime): string
     {
         return 'data:'.$mime.';base64,'.base64_encode(file_get_contents($path));
+    }
+
+    private function authorizeDocumentView(Request $request): void
+    {
+        abort_unless($request->user()->hasRole('super-admin', 'admin') || $request->user()->hasPermission('assignments.view'), 403);
     }
 
     private function form(WorkAssignment $assignment): View
