@@ -56,6 +56,10 @@ class ServiceRequestRequest extends FormRequest
                 $validator->errors()->add('service_type', 'Choose AMC, Free Service, or Paid Service for an existing machine.');
             }
 
+            if (! $this->route('service_request') && $this->input('request_type') === 'existing_service' && ! $this->filled('customer_amc_tagging_id')) {
+                $validator->errors()->add('request_type', 'Existing machine services must be created from a Customer-AMC Tagging service slot.');
+            }
+
             if ($this->filled('customer_amc_tagging_id')) {
                 $tagging = CustomerAmcTagging::find($this->integer('customer_amc_tagging_id'));
                 $slot = $this->integer('amc_service_number');

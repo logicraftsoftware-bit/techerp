@@ -23,10 +23,11 @@
     @if($serviceRequest->exists) @method('PUT') @endif
 
     <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div><h2 class="text-2xl font-bold text-slate-900">{{ $serviceRequest->exists ? 'Edit' : 'Create' }} Service Request</h2><p class="mt-1 text-sm text-slate-500">Select the customer and machine, then confirm coverage and visit details.</p></div>
+        <div><h2 class="text-2xl font-bold text-slate-900">{{ $serviceRequest->exists ? 'Edit' : 'Create Installation' }} Service Request</h2><p class="mt-1 text-sm text-slate-500">{{ $serviceRequest->exists ? 'Update the service request details.' : 'Create a new machine installation request for a customer.' }}</p></div>
         <button class="btn-primary">Save Service Request</button>
     </div>
 
+    @if($serviceRequest->exists)
     <section class="card mb-5 p-6">
         <h3 class="mb-4 font-bold text-slate-900">1. Request Type</h3>
         <div class="grid gap-4 md:grid-cols-2">
@@ -34,6 +35,9 @@
             <label class="cursor-pointer rounded-2xl border p-5" :class="requestType === 'existing_service' ? 'border-blue-500 bg-blue-50' : 'border-slate-200'"><input type="radio" name="request_type" value="existing_service" x-model="requestType" @change="requestTypeChanged" class="mr-2"><span class="font-semibold">Existing Machine Service</span><p class="ml-6 mt-1 text-sm text-slate-500">AMC, free service, or paid service for a customer machine.</p></label>
         </div>
     </section>
+    @else
+        <input type="hidden" name="request_type" value="new_installation">
+    @endif
 
     <section class="card mb-5 p-6">
         <h3 class="mb-4 font-bold text-slate-900">2. Customer & Machine</h3>
@@ -59,14 +63,16 @@
             <div><label class="form-label">Serial Number</label><input name="serial_number" x-model="serialNumber" class="form-input" placeholder="Serial number of this unit" maxlength="100"></div>
             <div><label class="form-label">Asset Number</label><input name="asset_number" x-model="assetNumber" class="form-input" placeholder="Asset number of this unit" maxlength="100"></div>
 
-            <div x-show="requestType === 'existing_service'" x-cloak><label class="form-label">Service Coverage *</label><select name="service_type" class="form-input" :required="requestType === 'existing_service'" :disabled="requestType !== 'existing_service'"><option value="">Select coverage</option>@foreach(['amc' => 'AMC Service', 'free_service' => 'Free Service', 'paid_service' => 'Paid Service'] as $value => $label)<option value="{{ $value }}" @selected(old('service_type', $serviceRequest->service_type) === $value)>{{ $label }}</option>@endforeach</select></div>
+            @if($serviceRequest->exists)<div x-show="requestType === 'existing_service'" x-cloak><label class="form-label">Service Coverage *</label><select name="service_type" class="form-input" :required="requestType === 'existing_service'" :disabled="requestType !== 'existing_service'"><option value="">Select coverage</option>@foreach(['amc' => 'AMC Service', 'free_service' => 'Free Service', 'paid_service' => 'Paid Service'] as $value => $label)<option value="{{ $value }}" @selected(old('service_type', $serviceRequest->service_type) === $value)>{{ $label }}</option>@endforeach</select></div>@endif
             <input type="hidden" name="service_type" value="installation" :disabled="requestType !== 'new_installation'">
 
+            @if($serviceRequest->exists)
             <div class="md:col-span-2">
                 <label class="form-label">AMC Plans <span class="font-normal text-slate-400">(select multiple if required)</span></label>
                 <input type="search" x-model="amcSearch" class="form-input mb-2" placeholder="Search AMC plans">
                 <div class="max-h-56 space-y-2 overflow-y-auto rounded-xl border border-slate-200 p-3"><template x-for="plan in filteredAmcPlans" :key="plan.id"><label class="flex cursor-pointer items-start gap-3 rounded-lg p-2 hover:bg-slate-50"><input type="checkbox" name="amc_plan_ids[]" :value="plan.id" x-model="selectedAmcPlanIds" class="mt-1"><span><span class="block text-sm font-medium" x-text="`${plan.plan_code} — ${plan.plan_name}`"></span><span class="text-xs text-slate-400" x-text="`${plan.machine_category?.category_name || ''}${plan.brand_master?.brand_name ? ' · '+plan.brand_master.brand_name : ''} · ${plan.duration.replaceAll('_', ' ')}`"></span></span></label></template><p x-show="!filteredAmcPlans.length" class="p-3 text-center text-sm text-slate-400">No matching AMC plan.</p></div>
             </div>
+            @endif
         </div>
     </section>
 

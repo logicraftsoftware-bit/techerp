@@ -79,30 +79,25 @@ class ServiceRequestTest extends TestCase
         $this->assertSame(0, $machine->fresh()->total_stock);
     }
 
-    public function test_existing_service_allows_any_active_catalog_machine(): void
+    public function test_regular_existing_service_creation_is_rejected(): void
     {
         // Machine Master no longer tracks which customer a unit belongs to (it's catalog
         // stock, not a per-installation record), so Existing Machine Service must be able
         // to pick any active machine — it does not require machine.customer_id to match.
         $customer = $this->customer('Acme');
-        $otherCustomer = $this->customer('Other');
         $machine = Machine::create(['machine_name' => 'Press', 'machine_code' => 'PR123456', 'status' => 'active']);
         $data = $this->baseData($customer) + ['request_type' => 'existing_service', 'service_type' => 'amc', 'machine_id' => $machine->id];
 
-        $this->post(route('service-requests.store'), $data)->assertRedirect(route('service-requests.index'));
-        $this->assertDatabaseHas('service_requests', ['customer_id' => $customer->id, 'machine_id' => $machine->id, 'service_type' => 'amc']);
-
-        $this->post(route('service-requests.store'), [...$data, 'customer_id' => $otherCustomer->id])
-            ->assertRedirect(route('service-requests.index'));
-        $this->assertDatabaseHas('service_requests', ['customer_id' => $otherCustomer->id, 'machine_id' => $machine->id, 'service_type' => 'amc']);
+        $this->post(route('service-requests.store'), $data)->assertSessionHasErrors('request_type');
+        $this->assertSame(0, ServiceRequest::count());
     }
 
     public function test_service_request_stores_referrer_and_displays_it(): void
     {
         $customer = $this->customer('Acme');
-        $machine = Machine::create(['machine_name' => 'Press', 'machine_code' => 'PR654321', 'status' => 'active']);
+        $machine = Machine::create(['machine_name' => 'Press', 'machine_code' => 'PR654321', 'total_stock' => 1, 'status' => 'active']);
         $technician = Technician::create(['name' => 'Referring Tech', 'mobile' => '9111111111', 'joining_date' => '2026-01-01', 'employment_type' => 'full_time', 'status' => 'active', 'salary_type' => 'monthly']);
-        $data = $this->baseData($customer) + ['request_type' => 'existing_service', 'service_type' => 'amc', 'machine_id' => $machine->id, 'referred_by' => "technician:{$technician->id}"];
+        $data = $this->baseData($customer) + ['request_type' => 'new_installation', 'service_type' => 'installation', 'machine_id' => $machine->id, 'referred_by' => "technician:{$technician->id}"];
 
         $this->post(route('service-requests.store'), $data)->assertRedirect(route('service-requests.index'));
         $request = ServiceRequest::firstOrFail();
@@ -116,8 +111,8 @@ class ServiceRequestTest extends TestCase
         // Customers are soft-deleted; a service request referencing one must not 500 the
         // list/detail pages afterwards -- it should keep showing the customer's own record.
         $customer = $this->customer('Acme');
-        $machine = Machine::create(['machine_name' => 'Press', 'machine_code' => 'PR777777', 'status' => 'active']);
-        $data = $this->baseData($customer) + ['request_type' => 'existing_service', 'service_type' => 'amc', 'machine_id' => $machine->id];
+        $machine = Machine::create(['machine_name' => 'Press', 'machine_code' => 'PR777777', 'total_stock' => 1, 'status' => 'active']);
+        $data = $this->baseData($customer) + ['request_type' => 'new_installation', 'service_type' => 'installation', 'machine_id' => $machine->id];
         $this->post(route('service-requests.store'), $data)->assertRedirect(route('service-requests.index'));
         $request = ServiceRequest::firstOrFail();
 
@@ -133,7 +128,9 @@ class ServiceRequestTest extends TestCase
             ->assertSee('Search customer by name, code or phone')
             ->assertSee('Search machine by code, name or model')
             ->assertSee('Product Category')
-            ->assertSee('select multiple if required');
+            ->assertSee('Create Installation')
+            ->assertDontSee('Existing Machine Service')
+            ->assertDontSee('AMC Plans');
     }
 
     public function test_service_request_form_includes_location_map(): void
