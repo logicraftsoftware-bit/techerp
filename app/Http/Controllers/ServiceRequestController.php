@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ServiceRequestRequest;
 use App\Models\AmcPlan;
 use App\Models\Customer;
+use App\Models\CustomerAmcTagging;
 use App\Models\Machine;
 use App\Models\MachineStockTransaction;
 use App\Models\ServiceRequest;
@@ -21,7 +22,6 @@ class ServiceRequestController extends Controller
     public function __construct()
     {
         $this->middleware('permission:service-requests,view')->only(['index', 'show']);
-        $this->middleware('permission:service-requests,create')->only(['create', 'store']);
         $this->middleware('permission:service-requests,update')->only(['edit', 'update']);
         $this->middleware('permission:service-requests,delete')->only(['destroy']);
     }
@@ -42,13 +42,27 @@ class ServiceRequestController extends Controller
         return view('service-requests.index', compact('records'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
+        $this->authorizeCreation($request);
+
+        if ($request->filled('amc_tagging')) {
+            $tagging = CustomerAmcTagging::with(['customer', 'machine.machineCategory', 'machine.brandMaster', 'amcPlan'])
+                ->findOrFail($request->integer('amc_tagging'));
+            $serviceNumber = $request->integer('service_number');
+            abort_unless($serviceNumber >= 1 && $serviceNumber <= $tagging->service_count, 404);
+            abort_if($tagging->serviceRequests()->where('amc_service_number', $serviceNumber)->exists(), 409, 'A service request already exists for this AMC service slot.');
+
+            return view('service-requests.amc-form', compact('tagging', 'serviceNumber'));
+        }
+
         return $this->form(new ServiceRequest);
     }
 
     public function store(ServiceRequestRequest $request): RedirectResponse
     {
+        $this->authorizeCreation($request);
+
         DB::transaction(function () use ($request): void {
             $data = $this->requestData($request);
             $machine = null;
@@ -78,7 +92,9 @@ class ServiceRequestController extends Controller
             }
         });
 
-        return to_route('service-requests.index')->with('success', 'Service request created.');
+        return $request->filled('customer_amc_tagging_id')
+            ? to_route('customer-amc-taggings.index')->with('success', 'AMC service request created.')
+            : to_route('service-requests.index')->with('success', 'Service request created.');
     }
 
     public function show(ServiceRequest $serviceRequest): View
@@ -125,6 +141,19 @@ class ServiceRequestController extends Controller
     private function requestData(ServiceRequestRequest $request): array
     {
         $data = $request->safe()->except('amc_plan_ids', 'referred_by');
+        if (! empty($data['customer_amc_tagging_id'])) {
+            $tagging = CustomerAmcTagging::with(['customer', 'machine'])->findOrFail($data['customer_amc_tagging_id']);
+            $data['customer_id'] = $tagging->customer_id;
+            $data['machine_id'] = $tagging->machine_id;
+            $data['request_type'] = 'existing_service';
+            $data['service_type'] = 'amc';
+            $data['contact_phone'] = $tagging->customer->mobile;
+            $data['serial_number'] = $tagging->machine->serial_number;
+            $data['asset_number'] = $tagging->machine->asset_number;
+            $data['city'] = $tagging->customer->city;
+            $data['state'] = $tagging->customer->state;
+            $data['pin_code'] = $tagging->customer->pin_code;
+        }
         $machine = Machine::with(['machineCategory', 'brandMaster'])->findOrFail($data['machine_id']);
 
         if ($data['request_type'] !== 'existing_service') {
@@ -148,5 +177,10 @@ class ServiceRequestController extends Controller
         }
 
         return [$matches[1] === 'technician' ? (int) $matches[2] : null, $matches[1] === 'user' ? (int) $matches[2] : null];
+    }
+
+    private function authorizeCreation(Request $request): void
+    {
+        abort_unless($request->user()->hasRole('super-admin', 'admin') || $request->user()->hasPermission('service-requests.create'), 403);
     }
 }

@@ -73,4 +73,9 @@ class ServiceRequest extends Model
     {
         return $this->hasMany(WorkAssignment::class);
     }
+
+    public function customerAmcTagging(): BelongsTo
+    {
+        return $this->belongsTo(CustomerAmcTagging::class);
+    }
 }

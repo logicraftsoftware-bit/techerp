@@ -2,6 +2,7 @@
 
 @section('content')
 @php($isAdmin = auth()->user()->hasRole('super-admin', 'admin'))
+@php($canCreateServiceRequest = $isAdmin || auth()->user()->hasPermission('service-requests.create'))
 <div class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
     <div><h2 class="text-2xl font-bold text-slate-900">Customer-AMC Tagging</h2><p class="mt-1 text-sm text-slate-500">Link customers and their machines to AMC plans and track expiry dates.</p></div>
     @if($isAdmin)<a href="{{ route('customer-amc-taggings.create') }}" class="btn-primary">+ Tag Customer AMC</a>@endif
@@ -9,13 +10,13 @@
 
 <form method="GET" class="mb-5 max-w-md"><label class="sr-only" for="search">Search</label><div class="flex gap-2"><input id="search" name="search" value="{{ request('search') }}" class="form-input" placeholder="Search customer, machine or AMC plan"><button class="btn-secondary">Search</button></div></form>
 
-<div class="card overflow-x-auto">
+<div class="card overflow-x-auto" x-data="{ expanded: null }">
     <table class="w-full text-left text-sm">
         <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="p-4">Customer</th><th class="p-4">Machine</th><th class="p-4">AMC Plan</th><th class="p-4">Plan Price</th><th class="p-4">Services</th><th class="p-4">Payment</th><th class="p-4">Start Date</th><th class="p-4">End Date</th><th class="p-4">Status</th>@if($isAdmin)<th class="p-4 text-right">Actions</th>@endif</tr></thead>
         <tbody class="divide-y">
         @forelse($records as $record)
             @php($daysLeft = today()->diffInDays($record->end_date, false))
-            <tr>
+            <tr :class="expanded === {{ $record->id }} && 'bg-blue-50/30'">
                 <td class="p-4"><span class="font-semibold text-slate-800">{{ $record->customer->customer_name }}</span><div class="text-xs text-slate-400">{{ $record->customer->customer_code }}</div></td>
                 <td class="p-4">{{ $record->machine->machine_name }}<div class="text-xs text-slate-400">{{ $record->machine->machine_code }}{{ $record->machine->model ? ' · '.$record->machine->model : '' }}</div></td>
                 <td class="p-4">{{ $record->amcPlan->plan_name }}<div class="text-xs text-slate-400">{{ $record->amcPlan->plan_code }} · {{ str($record->amcPlan->duration)->replace('_', ' ')->title() }}</div></td>
@@ -25,7 +26,27 @@
                 <td class="p-4 whitespace-nowrap">{{ $record->start_date->format('d M Y') }}</td>
                 <td class="p-4 whitespace-nowrap font-semibold">{{ $record->end_date->format('d M Y') }}</td>
                 <td class="p-4">@if($daysLeft < 0)<span class="status-badge status-muted">Expired</span>@elseif($daysLeft <= 31)<span class="status-badge status-warning">Expires in {{ $daysLeft }} {{ $daysLeft === 1 ? 'day' : 'days' }}</span>@else<span class="status-badge status-success">Active</span>@endif</td>
-                @if($isAdmin)<td class="p-4"><div class="flex justify-end gap-2"><a href="{{ route('customer-amc-taggings.edit', $record) }}" class="table-action">Edit</a><form method="POST" action="{{ route('customer-amc-taggings.destroy', $record) }}" onsubmit="return confirm('Delete this Customer-AMC tagging?')">@csrf @method('DELETE')<button class="table-action text-rose-600">Delete</button></form></div></td>@endif
+                @if($isAdmin)<td class="p-4"><div class="flex justify-end gap-2"><button type="button" @click="expanded = expanded === {{ $record->id }} ? null : {{ $record->id }}" class="table-action" aria-label="Show AMC service requests"><svg class="size-4 transition" :class="expanded === {{ $record->id }} && 'rotate-180'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button><a href="{{ route('customer-amc-taggings.edit', $record) }}" class="table-action">Edit</a><form method="POST" action="{{ route('customer-amc-taggings.destroy', $record) }}" onsubmit="return confirm('Delete this Customer-AMC tagging?')">@csrf @method('DELETE')<button class="table-action text-rose-600">Delete</button></form></div></td>@endif
+            </tr>
+            <tr x-cloak x-show="expanded === {{ $record->id }}" x-transition>
+                <td colspan="10" class="border-t border-blue-100 bg-blue-50/40 p-5">
+                    <div class="mb-3 flex items-center justify-between"><div><h3 class="font-semibold text-slate-900">AMC Service Requests</h3><p class="text-xs text-slate-500">{{ $record->serviceRequests->count() }} of {{ $record->service_count }} service slots created</p></div></div>
+                    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        @foreach(range(1, $record->service_count) as $serviceNumber)
+                            @php($existingRequest = $record->serviceRequests->firstWhere('amc_service_number', $serviceNumber))
+                            <div class="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-3">
+                                <span class="flex-1 text-sm font-semibold text-slate-700">Service Request - {{ $serviceNumber }}</span>
+                                @if($existingRequest)
+                                    <a href="{{ route('service-requests.show', $existingRequest) }}" class="btn-secondary px-3 py-2 text-xs">View {{ $existingRequest->request_code }}</a>
+                                @elseif($canCreateServiceRequest)
+                                    <a href="{{ route('service-requests.create', ['amc_tagging' => $record->id, 'service_number' => $serviceNumber]) }}" class="btn-primary px-3 py-2 text-xs">Create Service Request</a>
+                                @else
+                                    <span class="text-xs text-slate-400">Not created</span>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                </td>
             </tr>
         @empty
             <tr><td colspan="{{ $isAdmin ? 10 : 9 }}" class="p-12 text-center text-slate-400">No Customer-AMC taggings found.</td></tr>

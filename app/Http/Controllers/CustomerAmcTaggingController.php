@@ -18,7 +18,7 @@ class CustomerAmcTaggingController extends Controller
     {
         abort_unless($request->user()->hasRole('super-admin', 'admin') || $request->user()->hasPermission('customer-amc-taggings.view'), 403);
 
-        $records = CustomerAmcTagging::with(['customer', 'machine', 'amcPlan'])
+        $records = CustomerAmcTagging::with(['customer', 'machine', 'amcPlan', 'serviceRequests'])
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($nested) use ($search) {
                     $nested->whereHas('customer', fn ($q) => $q->where('customer_name', 'like', "%{$search}%")->orWhere('customer_code', 'like', "%{$search}%"))
@@ -66,6 +66,9 @@ class CustomerAmcTaggingController extends Controller
     public function destroy(CustomerAmcTagging $customerAmcTagging): RedirectResponse
     {
         $this->authorizeAdmin();
+        if ($customerAmcTagging->serviceRequests()->exists()) {
+            return back()->withErrors(['tagging' => 'This AMC tagging cannot be deleted because it has service requests.']);
+        }
         $customerAmcTagging->delete();
 
         return back()->with('success', 'Customer AMC tagging deleted.');

@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\CustomerAmcTagging;
+use App\Models\ServiceRequest;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -38,6 +40,8 @@ class ServiceRequestRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'status' => ['required', Rule::in(['open', 'scheduled', 'in_progress', 'completed', 'cancelled'])],
             'referred_by' => ['nullable', 'regex:/^(technician|user):\d+$/'],
+            'customer_amc_tagging_id' => ['nullable', 'integer', 'exists:customer_amc_taggings,id'],
+            'amc_service_number' => ['nullable', 'integer', 'min:1'],
         ];
     }
 
@@ -50,6 +54,23 @@ class ServiceRequestRequest extends FormRequest
 
             if ($this->input('request_type') === 'existing_service' && $this->input('service_type') === 'installation') {
                 $validator->errors()->add('service_type', 'Choose AMC, Free Service, or Paid Service for an existing machine.');
+            }
+
+            if ($this->filled('customer_amc_tagging_id')) {
+                $tagging = CustomerAmcTagging::find($this->integer('customer_amc_tagging_id'));
+                $slot = $this->integer('amc_service_number');
+
+                if (! $tagging || $slot < 1 || $slot > $tagging->service_count) {
+                    $validator->errors()->add('amc_service_number', 'The selected AMC service slot is invalid.');
+                } elseif ((int) $this->input('customer_id') !== $tagging->customer_id
+                    || (int) $this->input('machine_id') !== $tagging->machine_id
+                    || $this->input('request_type') !== 'existing_service'
+                    || $this->input('service_type') !== 'amc'
+                    || collect($this->input('amc_plan_ids', []))->map(fn ($id) => (int) $id)->all() !== [$tagging->amc_plan_id]) {
+                    $validator->errors()->add('customer_amc_tagging_id', 'The AMC tagging details cannot be changed.');
+                } elseif (ServiceRequest::where('customer_amc_tagging_id', $tagging->id)->where('amc_service_number', $slot)->exists()) {
+                    $validator->errors()->add('amc_service_number', 'A service request already exists for this AMC service slot.');
+                }
             }
         });
     }

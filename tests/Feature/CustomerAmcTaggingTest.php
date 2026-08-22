@@ -10,6 +10,7 @@ use App\Models\Machine;
 use App\Models\MachineCategory;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\ServiceRequest;
 use App\Models\User;
 use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -105,5 +106,46 @@ class CustomerAmcTaggingTest extends TestCase
             'amc_plan_id' => $this->plan->id, 'service_count' => 4,
             'payment_collected_by' => 'staff', 'start_date' => '2026-08-22',
         ])->assertSessionHasErrors(['paid_amount', 'payment_method', 'payment_remarks']);
+    }
+
+    public function test_amc_service_slots_create_prefilled_linked_service_requests_once(): void
+    {
+        $tagging = CustomerAmcTagging::create([
+            'customer_id' => $this->customer->id, 'machine_id' => $this->machine->id,
+            'amc_plan_id' => $this->plan->id, 'service_count' => 2,
+            'payment_collected_by' => 'technician', 'start_date' => '2026-08-22',
+            'end_date' => '2028-08-21', 'created_by' => $this->admin->id,
+        ]);
+
+        $this->actingAs($this->admin)->get(route('customer-amc-taggings.index'))->assertOk()
+            ->assertSee('Service Request - 1')->assertSee('Service Request - 2')->assertSee('Create Service Request');
+
+        $createUrl = route('service-requests.create', ['amc_tagging' => $tagging->id, 'service_number' => 1]);
+        $this->actingAs($this->admin)->get($createUrl)->assertOk()
+            ->assertSee('Create Service Request - 1')->assertSee('Contract details are locked')
+            ->assertSee($this->customer->customer_name)->assertSee($this->machine->machine_name)
+            ->assertSee($this->plan->plan_name)->assertSee('AMC Amount')->assertSee($this->customer->address);
+
+        $payload = [
+            'customer_amc_tagging_id' => $tagging->id, 'amc_service_number' => 1,
+            'request_type' => 'existing_service', 'service_type' => 'amc',
+            'customer_id' => $this->customer->id, 'machine_id' => $this->machine->id,
+            'amc_plan_ids' => [$this->plan->id], 'contact_phone' => $this->customer->mobile,
+            'subject' => 'First AMC service', 'complaint' => 'Routine AMC visit',
+            'priority' => 'normal', 'status' => 'open', 'service_address' => $this->customer->address,
+            'city' => $this->customer->city, 'state' => $this->customer->state, 'pin_code' => $this->customer->pin_code,
+            'notes' => 'Call before arrival',
+        ];
+        $this->actingAs($this->admin)->post(route('service-requests.store'), $payload)
+            ->assertRedirect(route('customer-amc-taggings.index'));
+
+        $serviceRequest = ServiceRequest::firstOrFail();
+        $this->assertSame($tagging->id, $serviceRequest->customer_amc_tagging_id);
+        $this->assertSame(1, $serviceRequest->amc_service_number);
+        $this->assertTrue($serviceRequest->amcPlans->contains($this->plan));
+
+        $this->actingAs($this->admin)->post(route('service-requests.store'), $payload)
+            ->assertSessionHasErrors('amc_service_number');
+        $this->assertSame(1, ServiceRequest::count());
     }
 }
