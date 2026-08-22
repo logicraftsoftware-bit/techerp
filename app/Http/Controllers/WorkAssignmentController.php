@@ -3,18 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\WorkAssignmentRequest;
+use App\Models\JobPart;
 use App\Models\ServiceRequest;
 use App\Models\Technician;
 use App\Models\WorkAssignment;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 class WorkAssignmentController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('permission:assignments,view')->only(['index', 'show']);
+        $this->middleware('permission:assignments,view')->only(['index', 'show', 'jobCard']);
         $this->middleware('permission:assignments,create')->only(['create', 'store']);
         $this->middleware('permission:assignments,update')->only(['edit', 'update']);
         $this->middleware('permission:assignments,delete')->only(['destroy']);
@@ -73,6 +76,22 @@ class WorkAssignmentController extends Controller
         $assignment->delete();
 
         return back()->with('success', 'Work assignment deleted.');
+    }
+
+    public function jobCard(WorkAssignment $assignment): Response
+    {
+        $assignment->load(['serviceRequest.customer', 'serviceRequest.machine', 'serviceRequest.amcPlans', 'technician', 'statusHistories.changedBy']);
+        $jobParts = JobPart::where('work_assignment_id', $assignment->id)->with('part')->get();
+        $logo = $this->dataUri(public_path('images/fieldservice-logo.png'), 'image/png');
+
+        return Pdf::loadView('work-assignments.job-card', compact('assignment', 'jobParts', 'logo'))
+            ->setPaper('a4', 'portrait')
+            ->download($assignment->assignment_code.'-job-card.pdf');
+    }
+
+    private function dataUri(string $path, string $mime): string
+    {
+        return 'data:'.$mime.';base64,'.base64_encode(file_get_contents($path));
     }
 
     private function form(WorkAssignment $assignment): View

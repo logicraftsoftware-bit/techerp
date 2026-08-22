@@ -71,6 +71,7 @@ Route::middleware(['auth', 'active', RunMissedCheckInMarker::class])->group(func
     Route::resource('machine-categories', MachineCategoryController::class)->except('show');
     Route::resource('amc-plans', AmcPlanController::class)->except('show');
     Route::resource('service-requests', ServiceRequestController::class);
+    Route::get('/assignments/{assignment}/job-card', [WorkAssignmentController::class, 'jobCard'])->name('assignments.job-card');
     Route::resource('assignments', WorkAssignmentController::class);
     Route::get('/job-cards', [JobCardController::class, 'index'])->name('job-cards.index');
     Route::get('/work-status', [WorkStatusController::class, 'index'])->name('work-status.index');
