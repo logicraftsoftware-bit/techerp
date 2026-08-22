@@ -13,7 +13,7 @@ class ServiceRequest extends Model
 
     protected function casts(): array
     {
-        return ['preferred_date' => 'date', 'latitude' => 'decimal:7', 'longitude' => 'decimal:7'];
+        return ['purchase_date' => 'date', 'amc_start_date' => 'date', 'amc_end_date' => 'date', 'paid_amount' => 'decimal:2', 'preferred_date' => 'date', 'latitude' => 'decimal:7', 'longitude' => 'decimal:7'];
     }
 
     protected static function booted(): void

@@ -1,6 +1,10 @@
 @extends('layouts.app', ['title' => $serviceRequest->exists ? 'Edit Service Request' : 'New Service Request'])
 
 @section('content')
+@php
+    $collectorOptions = [['id' => 'staff', 'label' => 'Payment collected by Staff'], ['id' => 'technician', 'label' => 'Payment collected by Technician']];
+    $paymentMethods = [['id' => 'upi', 'label' => 'UPI'], ['id' => 'cash', 'label' => 'Cash'], ['id' => 'card', 'label' => 'Card'], ['id' => 'bank_transfer', 'label' => 'Bank Transfer'], ['id' => 'cheque', 'label' => 'Cheque']];
+@endphp
 <form method="POST" action="{{ $serviceRequest->exists ? route('service-requests.update', $serviceRequest) : route('service-requests.store') }}"
       class="mx-auto max-w-6xl"
       x-data="serviceRequestForm(@js($customers), @js($machines), @js($amcPlans), @js([
@@ -17,8 +21,11 @@
           'city' => old('city', $serviceRequest->city),
           'state' => old('state', $serviceRequest->state),
           'pinCode' => old('pin_code', $serviceRequest->pin_code),
+          'purchaseDate' => old('purchase_date', $serviceRequest->purchase_date?->format('Y-m-d')),
+          'installationPlanId' => (string) collect(old('amc_plan_ids', $serviceRequest->amcPlans->pluck('id')))->first(),
+          'paymentBy' => old('payment_collected_by', $serviceRequest->payment_collected_by),
       ]))"
-      x-init="init()">
+      x-init="init()" @searchable-select-changed.window="selectChanged($event.detail)">
     @csrf
     @if($serviceRequest->exists) @method('PUT') @endif
 
@@ -62,6 +69,18 @@
             <div><label class="form-label">Model</label><input :value="selectedMachine?.model || '—'" class="form-input bg-slate-50" readonly></div>
             <div><label class="form-label">Serial Number</label><input name="serial_number" x-model="serialNumber" class="form-input" placeholder="Serial number of this unit" maxlength="100"></div>
             <div><label class="form-label">Asset Number</label><input name="asset_number" x-model="assetNumber" class="form-input" placeholder="Asset number of this unit" maxlength="100"></div>
+
+            @unless($serviceRequest->exists)
+            <div><label class="form-label">Purchase Date *</label><input type="date" name="purchase_date" x-model="purchaseDate" class="form-input" required></div>
+            <div class="relative" @click.outside="amcOpen = false"><label class="form-label">Choose AMC *</label><input type="hidden" name="amc_plan_ids[]" x-model="installationPlanId"><div class="relative"><input type="search" x-model="amcSearch" @focus="amcOpen = true" @input="installationPlanId = ''; amcOpen = true" class="form-input pr-10" placeholder="Search or select AMC plan" autocomplete="off"><button type="button" @click="amcOpen = !amcOpen" class="absolute inset-y-0 right-0 px-3 text-slate-400">⌄</button></div><div x-cloak x-show="amcOpen" class="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-xl"><template x-for="plan in filteredInstallationPlans" :key="plan.id"><button type="button" @click="selectInstallationPlan(plan)" class="block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-blue-50"><span class="block font-medium" x-text="`${plan.plan_code} — ${plan.plan_name}`"></span><span class="text-xs text-slate-400" x-text="plan.duration.replaceAll('_', ' ')"></span></button></template><p x-show="!filteredInstallationPlans.length" class="p-4 text-center text-sm text-slate-400">No matching AMC plan.</p></div></div>
+            <div><label class="form-label">AMC Price</label><input :value="formattedInstallationPlanPrice" class="form-input bg-slate-50 font-semibold" placeholder="Select an AMC plan" readonly></div>
+            <div><label class="form-label">AMC Start Date</label><input type="date" :value="purchaseDate" class="form-input bg-slate-50" readonly><p class="mt-1 text-xs text-slate-400">Same as Purchase Date.</p></div>
+            <div><label class="form-label">AMC End Date</label><input type="date" :value="installationAmcEndDate" class="form-input bg-slate-50" readonly><p class="mt-1 text-xs text-slate-400">Calculated from the AMC duration.</p></div>
+            @include('master._searchable_select', ['name' => 'payment_collected_by', 'label' => 'Payment Collection', 'options' => $collectorOptions, 'labelKey' => 'label', 'selected' => $serviceRequest->payment_collected_by, 'placeholder' => 'Search or select payment collector', 'required' => true])
+            <div x-cloak x-show="paymentBy === 'staff'"><label class="form-label">Paid Amount *</label><input type="number" name="paid_amount" value="{{ old('paid_amount') }}" min="0" step="0.01" class="form-input" :required="paymentBy === 'staff'"></div>
+            <div x-cloak x-show="paymentBy === 'staff'">@include('master._searchable_select', ['name' => 'payment_method', 'label' => 'Payment Method', 'options' => $paymentMethods, 'labelKey' => 'label', 'selected' => $serviceRequest->payment_method, 'placeholder' => 'Search or select payment method', 'required' => true])</div>
+            <div x-cloak x-show="paymentBy === 'staff'" class="md:col-span-2"><label class="form-label">Payment Remarks *</label><textarea name="payment_remarks" rows="3" class="form-input" :required="paymentBy === 'staff'">{{ old('payment_remarks') }}</textarea></div>
+            @endunless
 
             @if($serviceRequest->exists)<div x-show="requestType === 'existing_service'" x-cloak><label class="form-label">Service Coverage *</label><select name="service_type" class="form-input" :required="requestType === 'existing_service'" :disabled="requestType !== 'existing_service'"><option value="">Select coverage</option>@foreach(['amc' => 'AMC Service', 'free_service' => 'Free Service', 'paid_service' => 'Paid Service'] as $value => $label)<option value="{{ $value }}" @selected(old('service_type', $serviceRequest->service_type) === $value)>{{ $label }}</option>@endforeach</select></div>@endif
             <input type="hidden" name="service_type" value="installation" :disabled="requestType !== 'new_installation'">
@@ -107,7 +126,9 @@ function serviceRequestForm(customers, machines, amcPlans, initial) {
         requestType: initial.requestType,
         customerId: initial.customerId ? String(initial.customerId) : '', customerSearch: '', customerOpen: false,
         machineId: initial.machineId ? String(initial.machineId) : '', machineSearch: '', machineOpen: false,
-        selectedAmcPlanIds: Array.from(initial.amcPlanIds || [], String), amcSearch: '',
+        selectedAmcPlanIds: Array.from(initial.amcPlanIds || [], String), amcSearch: '', amcOpen: false,
+        installationPlanId: initial.installationPlanId || '', purchaseDate: initial.purchaseDate || '', paymentBy: initial.paymentBy || '',
+        selectChanged(detail) { if (detail.name === 'payment_collected_by') this.paymentBy = detail.value; },
         phone: initial.phone || '', serialNumber: initial.serialNumber || '', assetNumber: initial.assetNumber || '',
         address: initial.address || '', latitude: initial.latitude || '', longitude: initial.longitude || '',
         city: initial.city || '', state: initial.state || '', pinCode: initial.pinCode || '',
@@ -130,6 +151,23 @@ function serviceRequestForm(customers, machines, amcPlans, initial) {
             const term = this.amcSearch.toLowerCase().trim();
             return this.amcPlans.filter(item => !term || `${item.plan_code} ${item.plan_name} ${item.machine_category?.category_name || ''} ${item.brand_master?.brand_name || ''}`.toLowerCase().includes(term));
         },
+        get filteredInstallationPlans() {
+            const term = this.amcSearch.toLowerCase().trim();
+            return this.amcPlans.filter(item => !term || `${item.plan_code} ${item.plan_name} ${item.duration}`.toLowerCase().includes(term));
+        },
+        get selectedInstallationPlan() { return this.amcPlans.find(item => String(item.id) === String(this.installationPlanId)); },
+        get formattedInstallationPlanPrice() { return this.selectedInstallationPlan ? `₹${Number(this.selectedInstallationPlan.price).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : ''; },
+        get installationAmcEndDate() {
+            if (!this.purchaseDate || !this.selectedInstallationPlan) return '';
+            const years = {'1_year': 1, '2_years': 2, '3_years': 3}[this.selectedInstallationPlan.duration];
+            if (!years) return '';
+            const parts = this.purchaseDate.split('-').map(Number);
+            const date = new Date(Date.UTC(parts[0] + years, parts[1] - 1, parts[2]));
+            if (date.getUTCMonth() !== parts[1] - 1) date.setUTCDate(0);
+            date.setUTCDate(date.getUTCDate() - 1);
+            return date.toISOString().slice(0, 10);
+        },
+        selectInstallationPlan(plan) { this.installationPlanId = String(plan.id); this.amcSearch = `${plan.plan_code} — ${plan.plan_name}`; this.amcOpen = false; },
         selectCustomer(customer) {
             this.customerId = String(customer.id); this.customerSearch = `${customer.customer_name} · ${customer.customer_code} · ${customer.mobile}`; this.customerOpen = false;
             this.phone = customer.mobile || ''; this.address = customer.address || ''; this.city = customer.city || ''; this.state = customer.state || ''; this.pinCode = customer.pin_code || '';

@@ -42,6 +42,11 @@ class ServiceRequestTest extends TestCase
             'serial_number' => 'SER-100',
             'asset_number' => 'AST-100',
             'amc_plan_ids' => [$plan->id],
+            'purchase_date' => '2026-08-10',
+            'payment_collected_by' => 'staff',
+            'paid_amount' => 5000,
+            'payment_method' => 'upi',
+            'payment_remarks' => 'Paid in full',
         ];
 
         $this->post(route('service-requests.store'), $data)->assertRedirect(route('service-requests.index'));
@@ -50,6 +55,11 @@ class ServiceRequestTest extends TestCase
         $this->assertSame('Kutchina Chimney', $request->product_name);
         $this->assertSame('SER-100', $request->serial_number);
         $this->assertSame('AST-100', $request->asset_number);
+        $this->assertSame('2026-08-10', $request->purchase_date->toDateString());
+        $this->assertSame('2026-08-10', $request->amc_start_date->toDateString());
+        $this->assertSame('2027-08-09', $request->amc_end_date->toDateString());
+        $this->assertSame('staff', $request->payment_collected_by);
+        $this->assertSame('5000.00', $request->paid_amount);
         $this->assertTrue($request->amcPlans->contains($plan));
         $this->assertSame(4, $machine->fresh()->total_stock);
         $this->assertDatabaseHas('machine_stock_transactions', ['machine_id' => $machine->id, 'service_request_id' => $request->id, 'quantity' => -1, 'balance_after' => 4]);
@@ -68,10 +78,12 @@ class ServiceRequestTest extends TestCase
         $category = MachineCategory::create(['category_name' => 'Chimney']);
         $brand = Brand::create(['brand_name' => 'Kutchina']);
         $machine = Machine::create(['machine_name' => 'Kutchina Chimney', 'machine_code' => 'KC999999', 'machine_category_id' => $category->id, 'brand_id' => $brand->id, 'model' => 'KC-100', 'total_stock' => 0, 'status' => 'active']);
+        $plan = AmcPlan::create(['plan_name' => 'Gold Plan', 'machine_category_id' => $category->id, 'brand_id' => $brand->id, 'plan_type' => 'comprehensive', 'duration' => '1_year', 'parts_included' => true, 'price' => 5000, 'tax_percent' => 18, 'status' => 'active']);
         $data = $this->baseData($customer) + [
             'request_type' => 'new_installation',
             'service_type' => 'installation',
             'machine_id' => $machine->id,
+            'amc_plan_ids' => [$plan->id], 'purchase_date' => '2026-08-10', 'payment_collected_by' => 'technician',
         ];
 
         $this->post(route('service-requests.store'), $data)->assertSessionHasErrors('machine_id');
@@ -97,7 +109,8 @@ class ServiceRequestTest extends TestCase
         $customer = $this->customer('Acme');
         $machine = Machine::create(['machine_name' => 'Press', 'machine_code' => 'PR654321', 'total_stock' => 1, 'status' => 'active']);
         $technician = Technician::create(['name' => 'Referring Tech', 'mobile' => '9111111111', 'joining_date' => '2026-01-01', 'employment_type' => 'full_time', 'status' => 'active', 'salary_type' => 'monthly']);
-        $data = $this->baseData($customer) + ['request_type' => 'new_installation', 'service_type' => 'installation', 'machine_id' => $machine->id, 'referred_by' => "technician:{$technician->id}"];
+        $plan = $this->amcPlan();
+        $data = $this->baseData($customer) + ['request_type' => 'new_installation', 'service_type' => 'installation', 'machine_id' => $machine->id, 'amc_plan_ids' => [$plan->id], 'purchase_date' => '2026-08-10', 'payment_collected_by' => 'technician', 'referred_by' => "technician:{$technician->id}"];
 
         $this->post(route('service-requests.store'), $data)->assertRedirect(route('service-requests.index'));
         $request = ServiceRequest::firstOrFail();
@@ -112,7 +125,8 @@ class ServiceRequestTest extends TestCase
         // list/detail pages afterwards -- it should keep showing the customer's own record.
         $customer = $this->customer('Acme');
         $machine = Machine::create(['machine_name' => 'Press', 'machine_code' => 'PR777777', 'total_stock' => 1, 'status' => 'active']);
-        $data = $this->baseData($customer) + ['request_type' => 'new_installation', 'service_type' => 'installation', 'machine_id' => $machine->id];
+        $plan = $this->amcPlan();
+        $data = $this->baseData($customer) + ['request_type' => 'new_installation', 'service_type' => 'installation', 'machine_id' => $machine->id, 'amc_plan_ids' => [$plan->id], 'purchase_date' => '2026-08-10', 'payment_collected_by' => 'technician'];
         $this->post(route('service-requests.store'), $data)->assertRedirect(route('service-requests.index'));
         $request = ServiceRequest::firstOrFail();
 
@@ -129,6 +143,9 @@ class ServiceRequestTest extends TestCase
             ->assertSee('Search machine by code, name or model')
             ->assertSee('Product Category')
             ->assertSee('Create Installation')
+            ->assertSee('Purchase Date')
+            ->assertSee('AMC Price')
+            ->assertSee('Payment collected by Staff')
             ->assertDontSee('Existing Machine Service')
             ->assertDontSee('AMC Plans');
     }
@@ -145,6 +162,14 @@ class ServiceRequestTest extends TestCase
     private function customer(string $name): Customer
     {
         return Customer::create(['customer_code' => strtoupper(substr($name, 0, 2)).random_int(100000, 999999), 'customer_type' => 'company', 'customer_name' => $name, 'mobile' => (string) random_int(7000000000, 9999999999), 'address' => 'Main Road', 'city' => 'Mumbai', 'state' => 'Maharashtra', 'pin_code' => '400001', 'status' => 'active']);
+    }
+
+    private function amcPlan(): AmcPlan
+    {
+        $category = MachineCategory::create(['category_name' => 'General '.random_int(1000, 9999)]);
+        $brand = Brand::create(['brand_name' => 'Brand '.random_int(1000, 9999)]);
+
+        return AmcPlan::create(['plan_name' => 'Installation AMC', 'machine_category_id' => $category->id, 'brand_id' => $brand->id, 'plan_type' => 'comprehensive', 'duration' => '1_year', 'parts_included' => true, 'price' => 5000, 'tax_percent' => 18, 'status' => 'active']);
     }
 
     private function baseData(Customer $customer): array

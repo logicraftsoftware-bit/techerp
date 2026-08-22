@@ -26,6 +26,11 @@ class ServiceRequestRequest extends FormRequest
             'asset_number' => ['nullable', 'string', 'max:100'],
             'amc_plan_ids' => ['nullable', 'array'],
             'amc_plan_ids.*' => ['integer', 'distinct', 'exists:amc_plans,id'],
+            'purchase_date' => [Rule::requiredIf(! $this->route('service_request') && $this->input('request_type') === 'new_installation'), 'nullable', 'date'],
+            'payment_collected_by' => [Rule::requiredIf(! $this->route('service_request') && $this->input('request_type') === 'new_installation'), 'nullable', Rule::in(['staff', 'technician'])],
+            'paid_amount' => [Rule::requiredIf(! $this->route('service_request') && $this->input('request_type') === 'new_installation' && $this->input('payment_collected_by') === 'staff'), 'nullable', 'numeric', 'min:0'],
+            'payment_method' => [Rule::requiredIf(! $this->route('service_request') && $this->input('request_type') === 'new_installation' && $this->input('payment_collected_by') === 'staff'), 'nullable', Rule::in(['upi', 'cash', 'card', 'bank_transfer', 'cheque'])],
+            'payment_remarks' => [Rule::requiredIf(! $this->route('service_request') && $this->input('request_type') === 'new_installation' && $this->input('payment_collected_by') === 'staff'), 'nullable', 'string', 'max:1000'],
             'subject' => ['required', 'string', 'max:190'],
             'complaint' => ['nullable', 'string'],
             'priority' => ['required', Rule::in(['low', 'normal', 'high', 'urgent'])],
@@ -50,6 +55,10 @@ class ServiceRequestRequest extends FormRequest
         $validator->after(function ($validator): void {
             if ($this->input('request_type') === 'new_installation' && $this->input('service_type') !== 'installation') {
                 $validator->errors()->add('service_type', 'New requests must use Installation service type.');
+            }
+
+            if (! $this->route('service_request') && $this->input('request_type') === 'new_installation' && count($this->input('amc_plan_ids', [])) !== 1) {
+                $validator->errors()->add('amc_plan_ids', 'Choose one AMC plan for the installation.');
             }
 
             if ($this->input('request_type') === 'existing_service' && $this->input('service_type') === 'installation') {

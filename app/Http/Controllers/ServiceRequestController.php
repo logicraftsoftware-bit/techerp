@@ -11,6 +11,7 @@ use App\Models\MachineStockTransaction;
 use App\Models\ServiceRequest;
 use App\Models\Technician;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -158,6 +159,16 @@ class ServiceRequestController extends Controller
 
         if ($data['request_type'] !== 'existing_service') {
             $data['service_type'] = 'installation';
+            if (! empty($data['purchase_date']) && $request->validated('amc_plan_ids')) {
+                $plan = AmcPlan::findOrFail((int) $request->validated('amc_plan_ids')[0]);
+                $data['amc_start_date'] = $data['purchase_date'];
+                $data['amc_end_date'] = CustomerAmcTagging::calculateEndDate(Carbon::parse($data['purchase_date']), $plan->duration)->toDateString();
+            }
+            if (($data['payment_collected_by'] ?? null) === 'technician') {
+                $data['paid_amount'] = null;
+                $data['payment_method'] = null;
+                $data['payment_remarks'] = null;
+            }
         }
 
         $data['machine_category_id'] = $machine->machine_category_id;
