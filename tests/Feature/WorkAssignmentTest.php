@@ -75,6 +75,17 @@ class WorkAssignmentTest extends TestCase
             ->assertOk()
             ->assertHeader('content-type', 'application/pdf')
             ->assertDownload($assignment->assignment_code.'-job-card.pdf');
+
+        // ?view=1 streams inline (for the "View" link) instead of forcing a download.
+        $this->get(route('assignments.job-card', $assignment).'?view=1')
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf')
+            ->assertHeader('content-disposition', 'inline; filename='.$assignment->assignment_code.'-job-card.pdf');
+
+        $this->get(route('job-cards.index', ['month' => '2026-08']))
+            ->assertOk()
+            ->assertSee('assignments/${job.id}/job-card?view=1', false)
+            ->assertSee('assignments/${job.id}/job-card`', false);
     }
 
     public function test_already_assigned_request_is_excluded_from_create_but_kept_on_its_own_edit_page(): void

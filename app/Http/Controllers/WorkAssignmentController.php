@@ -78,15 +78,16 @@ class WorkAssignmentController extends Controller
         return back()->with('success', 'Work assignment deleted.');
     }
 
-    public function jobCard(WorkAssignment $assignment): Response
+    public function jobCard(Request $request, WorkAssignment $assignment): Response
     {
         $assignment->load(['serviceRequest.customer', 'serviceRequest.machine', 'serviceRequest.amcPlans', 'technician', 'statusHistories.changedBy']);
         $jobParts = JobPart::where('work_assignment_id', $assignment->id)->with('part')->get();
         $logo = $this->dataUri(public_path('images/fieldservice-logo.png'), 'image/png');
 
-        return Pdf::loadView('work-assignments.job-card', compact('assignment', 'jobParts', 'logo'))
-            ->setPaper('a4', 'portrait')
-            ->download($assignment->assignment_code.'-job-card.pdf');
+        $pdf = Pdf::loadView('work-assignments.job-card', compact('assignment', 'jobParts', 'logo'))->setPaper('a4', 'portrait');
+        $filename = $assignment->assignment_code.'-job-card.pdf';
+
+        return $request->boolean('view') ? $pdf->stream($filename) : $pdf->download($filename);
     }
 
     private function dataUri(string $path, string $mime): string
