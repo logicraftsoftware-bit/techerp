@@ -96,4 +96,14 @@ class DashboardTest extends TestCase
             'service-reports',
         ], array_column(config('crm.navigation.Service Operations'), 0));
     }
+
+    public function test_customer_amc_tagging_menu_appears_before_service_operations(): void
+    {
+        $this->seed(RolePermissionSeeder::class);
+        $user = User::factory()->create();
+        $user->roles()->attach(Role::where('slug', 'super-admin')->firstOrFail());
+
+        $content = $this->actingAs($user)->get(route('dashboard'))->assertOk()->getContent();
+        $this->assertLessThan(strpos($content, 'Service Operations'), strpos($content, 'Customer-AMC Tagging'));
+    }
 }

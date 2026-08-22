@@ -56,4 +56,9 @@ class Machine extends Model
     {
         return $this->hasMany(MachineStockTransaction::class);
     }
+
+    public function amcTaggings(): HasMany
+    {
+        return $this->hasMany(CustomerAmcTagging::class);
+    }
 }

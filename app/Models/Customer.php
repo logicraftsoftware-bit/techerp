@@ -44,6 +44,11 @@ class Customer extends Model
         return $this->hasMany(Machine::class);
     }
 
+    public function amcTaggings(): HasMany
+    {
+        return $this->hasMany(CustomerAmcTagging::class);
+    }
+
     public function referredBy(): BelongsTo
     {
         return $this->belongsTo(Technician::class, 'referred_by_technician_id');

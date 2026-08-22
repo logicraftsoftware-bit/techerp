@@ -4,6 +4,7 @@ use App\Http\Controllers\AmcPlanController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CommissionTypeController;
+use App\Http\Controllers\CustomerAmcTaggingController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerImportController;
 use App\Http\Controllers\DashboardController;
@@ -70,6 +71,7 @@ Route::middleware(['auth', 'active', RunMissedCheckInMarker::class])->group(func
     Route::resource('departments', DepartmentController::class)->except('show');
     Route::resource('machine-categories', MachineCategoryController::class)->except('show');
     Route::resource('amc-plans', AmcPlanController::class)->except('show');
+    Route::resource('customer-amc-taggings', CustomerAmcTaggingController::class)->except('show');
     Route::resource('service-requests', ServiceRequestController::class);
     Route::get('/assignments/{assignment}/job-card', [WorkAssignmentController::class, 'jobCard'])->name('assignments.job-card');
     Route::resource('assignments', WorkAssignmentController::class);

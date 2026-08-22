@@ -20,10 +20,12 @@ class RolePermissionSeeder extends Seeder
         // One permission per real sidebar menu item (the granularity the per-user
         // Permission screen actually operates on), plus "users" which lives outside
         // config('crm.navigation') under the hand-written Administration section.
-        $menuSlugs = collect(config('crm.navigation'))->flatten(1)->mapWithKeys(fn ($item) => [$item[0] => $item[1]])->put('users', 'Users');
+        $menuSlugs = collect(config('crm.navigation'))->flatten(1)->mapWithKeys(fn ($item) => [$item[0] => $item[1]])
+            ->put('customer-amc-taggings', 'Customer-AMC Tagging')
+            ->put('users', 'Users');
         foreach ($menuSlugs as $slug => $label) {
             foreach (['view', 'create', 'update', 'delete'] as $action) {
-                Permission::updateOrCreate(['slug' => "$slug.$action"], ['name' => ucfirst($action).' '.$label, 'module' => $slug]);
+                Permission::updateOrCreate(['slug' => "$slug.$action"], ['name' => ucfirst($action).' '.$label, 'module' => $slug === 'customer-amc-taggings' ? 'amc' : $slug]);
             }
         }
 

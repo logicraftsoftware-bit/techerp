@@ -1,5 +1,17 @@
 @extends('layouts.app', ['title' => 'Dashboard'])
 @section('content')
+@if($expiringAmcs->isNotEmpty())
+<div x-data="{ open: true }" x-cloak>
+    <div x-show="open" x-transition.opacity class="fixed inset-0 z-[70] bg-slate-950/50" @click="open=false"></div>
+    <section x-show="open" x-transition class="fixed left-1/2 top-1/2 z-[80] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl bg-white shadow-2xl" role="dialog" aria-modal="true" aria-labelledby="amc-expiry-title">
+        <div class="flex items-start justify-between border-b border-amber-100 bg-amber-50 p-5"><div><h2 id="amc-expiry-title" class="text-lg font-bold text-amber-950">AMC Expiry Reminder</h2><p class="mt-1 text-sm text-amber-700">{{ $expiringAmcs->count() }} {{ str('contract')->plural($expiringAmcs->count()) }} will expire within the next month.</p></div><button type="button" @click="open=false" class="rounded-lg p-2 text-amber-800 hover:bg-amber-100" aria-label="Close reminder">✕</button></div>
+        <div class="max-h-96 divide-y overflow-y-auto">
+            @foreach($expiringAmcs as $amc)<a href="{{ route('customer-amc-taggings.edit', $amc) }}" class="flex items-center gap-4 p-5 hover:bg-slate-50"><span class="grid size-11 shrink-0 place-items-center rounded-xl bg-amber-100 font-bold text-amber-700">{{ today()->diffInDays($amc->end_date) }}</span><span><span class="block font-semibold text-slate-900">{{ $amc->customer->customer_name }} · {{ $amc->machine->machine_name }}</span><span class="block text-xs text-slate-500">{{ $amc->amcPlan->plan_name }} ends {{ $amc->end_date->format('d M Y') }}</span></span><span class="ml-auto text-xs font-semibold text-amber-700">days left</span></a>@endforeach
+        </div>
+        <div class="flex justify-end gap-3 border-t bg-slate-50 p-4"><button type="button" @click="open=false" class="btn-secondary">Close</button><a href="{{ route('customer-amc-taggings.index') }}" class="btn-primary">View All AMC Taggings</a></div>
+    </section>
+</div>
+@endif
 <div class="mb-7 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><p class="text-2xl font-bold text-slate-900">Good {{ now()->hour < 12 ? 'morning' : (now()->hour < 17 ? 'afternoon' : 'evening') }}, {{ str(auth()->user()->name)->before(' ') }}</p><p class="mt-1 text-sm text-slate-500">Here is the latest view of your field operations.</p></div><div class="flex rounded-xl border border-slate-200 bg-white p-1 text-xs"><button class="rounded-lg bg-slate-900 px-3 py-2 font-medium text-white">Daily</button><button class="px-3 py-2">Weekly</button><button class="px-3 py-2">Monthly</button><button class="px-3 py-2">Yearly</button></div></div>
 <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
 @foreach($metrics as $metric)<article class="card group p-5"><div class="flex items-start justify-between"><div><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ $metric['label'] }}</p><p class="mt-3 text-2xl font-bold text-slate-900">{{ ($metric['money'] ?? false) ? '₹'.number_format($metric['value'], 0) : number_format($metric['value']) }}</p></div><span class="grid size-9 place-items-center rounded-xl bg-{{ $metric['tone'] }}-50 text-{{ $metric['tone'] }}-600">↗</span></div><p class="mt-3 text-[11px] text-slate-400">Live operational total</p></article>@endforeach

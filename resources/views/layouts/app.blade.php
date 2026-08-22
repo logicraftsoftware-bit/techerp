@@ -27,8 +27,13 @@
                     <a href="{{ route('my-calendar.index') }}" class="nav-link mb-3 py-3.5 {{ request()->routeIs('my-calendar.*') ? 'nav-link-active' : '' }}"><svg class="size-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 3v4M16 3v4"/></svg><span class="text-base">My Calendar</span></a>
                 @endunless
                 @foreach(config('crm.navigation') as $group => $items)
+                    @if($group === 'Service Operations' && ($canSeeEverything || auth()->user()->hasRole('admin') || auth()->user()->hasPermission('customer-amc-taggings.view')))
+                        <a href="{{ route('customer-amc-taggings.index') }}" class="nav-link mb-2 py-3.5 {{ request()->routeIs('customer-amc-taggings.*') ? 'nav-link-active' : '' }}">
+                            <svg class="size-6 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m16 11 2 2 4-4"/></svg><span>Customer-AMC Tagging</span>
+                        </a>
+                    @endif
                     @php
-                        $resources = ['customers', 'brands', 'departments', 'machine-categories', 'machines', 'machine-inventory', 'technicians', 'skills', 'amc-plans', 'service-requests', 'assignments', 'job-cards', 'work-status', 'service-reports', 'parts', 'units', 'inventory', 'parts-issues', 'job-parts', 'parts-requests', 'attendance', 'leave', 'holidays', 'salary', 'commission-types', 'expenses'];
+                        $resources = ['customers', 'brands', 'departments', 'machine-categories', 'machines', 'machine-inventory', 'technicians', 'skills', 'amc-plans', 'customer-amc-taggings', 'service-requests', 'assignments', 'job-cards', 'work-status', 'service-reports', 'parts', 'units', 'inventory', 'parts-issues', 'job-parts', 'parts-requests', 'attendance', 'leave', 'holidays', 'salary', 'commission-types', 'expenses'];
                         $items = collect($items)->filter(fn ($item) => $canSeeEverything || auth()->user()->hasPermission($item[0].'.view'))->all();
                     @endphp
                     @continue(empty($items))

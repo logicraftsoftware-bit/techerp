@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\CustomerAmcTagging;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +31,12 @@ class DashboardService
             ['label' => 'Monthly Expenses', 'value' => $this->money('expenses', 'amount', $month), 'tone' => 'rose', 'money' => true],
         ];
 
-        return ['metrics' => $metrics, 'charts' => $this->charts(), 'recentUsers' => User::with('roles')->latest()->limit(5)->get()];
+        return [
+            'metrics' => $metrics,
+            'charts' => $this->charts(),
+            'recentUsers' => User::with('roles')->latest()->limit(5)->get(),
+            'expiringAmcs' => $this->expiringAmcs(),
+        ];
     }
 
     private function count(string $table): int
@@ -75,5 +81,17 @@ class DashboardService
             'status' => ['labels' => ['Completed', 'Pending', 'In Progress', 'Overdue'], 'values' => [0, 0, 0, 0]],
             'attendance' => ['labels' => ['Present', 'Leave', 'Absent'], 'values' => [$this->attendance('present'), $this->attendance('leave'), $this->attendance('absent')]],
         ];
+    }
+
+    private function expiringAmcs()
+    {
+        if (! auth()->user()?->hasRole('super-admin', 'admin') || ! Schema::hasTable('customer_amc_taggings')) {
+            return collect();
+        }
+
+        return CustomerAmcTagging::with(['customer', 'machine', 'amcPlan'])
+            ->whereBetween('end_date', [today(), today()->addMonth()])
+            ->orderBy('end_date')
+            ->get();
     }
 }
