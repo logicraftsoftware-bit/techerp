@@ -44,16 +44,18 @@ class CustomerAmcTaggingTest extends TestCase
     {
         $this->actingAs($this->admin)->post(route('customer-amc-taggings.store'), [
             'customer_id' => $this->customer->id, 'machine_id' => $this->machine->id,
-            'amc_plan_id' => $this->plan->id, 'start_date' => '2026-08-22',
+            'amc_plan_id' => $this->plan->id, 'service_count' => 4, 'payment_collected_by' => 'staff',
+            'paid_amount' => 2500, 'payment_method' => 'upi', 'payment_remarks' => 'Advance received', 'start_date' => '2026-08-22',
         ])->assertRedirect(route('customer-amc-taggings.index'));
 
         $tagging = CustomerAmcTagging::firstOrFail();
         $this->assertSame('2028-08-21', $tagging->end_date->toDateString());
+        $this->assertSame(4, $tagging->service_count);
         $this->actingAs($this->admin)->get(route('customer-amc-taggings.index'))->assertOk()->assertSee('Acme Industries')->assertSee('Industrial Press')->assertSee('Gold Plan');
 
         $this->actingAs($this->admin)->put(route('customer-amc-taggings.update', $tagging), [
             'customer_id' => $this->customer->id, 'machine_id' => $this->machine->id,
-            'amc_plan_id' => $this->plan->id, 'start_date' => '2026-09-01',
+            'amc_plan_id' => $this->plan->id, 'service_count' => 6, 'payment_collected_by' => 'technician', 'start_date' => '2026-09-01',
         ])->assertRedirect(route('customer-amc-taggings.index'));
         $this->assertDatabaseHas('customer_amc_taggings', ['id' => $tagging->id, 'end_date' => '2028-08-31 00:00:00']);
 
@@ -61,13 +63,14 @@ class CustomerAmcTaggingTest extends TestCase
         $this->assertDatabaseMissing('customer_amc_taggings', ['id' => $tagging->id]);
     }
 
-    public function test_machine_must_belong_to_selected_customer(): void
+    public function test_machine_can_be_selected_from_machine_master_independent_of_customer(): void
     {
         $other = Customer::create(['customer_name' => 'Other Customer', 'mobile' => '9000000002', 'address' => 'Other Road', 'city' => 'Kolkata', 'state' => 'West Bengal', 'pin_code' => '700002']);
         $this->actingAs($this->admin)->post(route('customer-amc-taggings.store'), [
             'customer_id' => $other->id, 'machine_id' => $this->machine->id,
-            'amc_plan_id' => $this->plan->id, 'start_date' => '2026-08-22',
-        ])->assertSessionHasErrors('machine_id');
+            'amc_plan_id' => $this->plan->id, 'service_count' => 2, 'payment_collected_by' => 'technician', 'start_date' => '2026-08-22',
+        ])->assertRedirect(route('customer-amc-taggings.index'));
+        $this->assertDatabaseHas('customer_amc_taggings', ['customer_id' => $other->id, 'machine_id' => $this->machine->id, 'service_count' => 2]);
     }
 
     public function test_non_admin_with_view_permission_cannot_modify_taggings(): void
@@ -80,7 +83,27 @@ class CustomerAmcTaggingTest extends TestCase
 
     public function test_admin_dashboard_shows_amcs_expiring_within_one_month(): void
     {
-        CustomerAmcTagging::create(['customer_id' => $this->customer->id, 'machine_id' => $this->machine->id, 'amc_plan_id' => $this->plan->id, 'start_date' => today()->subYears(2)->addDays(10), 'end_date' => today()->addDays(9), 'created_by' => $this->admin->id]);
+        CustomerAmcTagging::create(['customer_id' => $this->customer->id, 'machine_id' => $this->machine->id, 'amc_plan_id' => $this->plan->id, 'service_count' => 4, 'payment_collected_by' => 'technician', 'start_date' => today()->subYears(2)->addDays(10), 'end_date' => today()->addDays(9), 'created_by' => $this->admin->id]);
         $this->actingAs($this->admin)->get(route('dashboard'))->assertOk()->assertSee('AMC Expiry Reminder')->assertSee('Acme Industries');
+    }
+
+    public function test_form_has_searchable_selects_plan_price_and_conditional_payment_fields(): void
+    {
+        $this->actingAs($this->admin)->get(route('customer-amc-taggings.create'))->assertOk()
+            ->assertSee('Search or select customer')
+            ->assertSee('Search by machine name, code or model')
+            ->assertSee('Search or select AMC plan')
+            ->assertSee('AMC Plan Price')
+            ->assertSee('Payment collected by Staff')
+            ->assertSee('Paid Amount');
+    }
+
+    public function test_staff_collection_requires_payment_details(): void
+    {
+        $this->actingAs($this->admin)->post(route('customer-amc-taggings.store'), [
+            'customer_id' => $this->customer->id, 'machine_id' => $this->machine->id,
+            'amc_plan_id' => $this->plan->id, 'service_count' => 4,
+            'payment_collected_by' => 'staff', 'start_date' => '2026-08-22',
+        ])->assertSessionHasErrors(['paid_amount', 'payment_method', 'payment_remarks']);
     }
 }

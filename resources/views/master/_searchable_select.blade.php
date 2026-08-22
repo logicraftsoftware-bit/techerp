@@ -24,10 +24,12 @@
             this.selected = option.value;
             this.search = option.label;
             this.open = false;
+            this.$dispatch('searchable-select-changed', { name: @js($name), value: option.value });
         },
         clearSelection() {
             this.selected = '';
             this.open = true;
+            this.$dispatch('searchable-select-changed', { name: @js($name), value: '' });
         }
     }"
     @click.outside="open = false"

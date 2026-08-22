@@ -75,15 +75,20 @@ class CustomerAmcTaggingController extends Controller
     {
         return view('customer-amc-taggings.form', [
             'tagging' => $customerAmcTagging,
-            'customers' => Customer::orderBy('customer_name')->get(['id', 'customer_code', 'customer_name']),
-            'machines' => Machine::orderBy('machine_name')->get(['id', 'customer_id', 'machine_code', 'machine_name', 'model']),
-            'plans' => AmcPlan::where('status', 'active')->orderBy('plan_name')->get(['id', 'plan_code', 'plan_name', 'duration']),
+            'customers' => Customer::orderBy('customer_name')->get(['id', 'customer_code', 'customer_name', 'mobile'])->map(fn ($customer) => ['id' => $customer->id, 'label' => "{$customer->customer_name} ({$customer->customer_code}) · {$customer->mobile}"]),
+            'machines' => Machine::where('status', 'active')->orderBy('machine_name')->get(['id', 'machine_code', 'machine_name', 'model'])->map(fn ($machine) => ['id' => $machine->id, 'label' => "{$machine->machine_name} ({$machine->machine_code})".($machine->model ? " · {$machine->model}" : '')]),
+            'plans' => AmcPlan::where('status', 'active')->orderBy('plan_name')->get(['id', 'plan_code', 'plan_name', 'duration', 'price'])->map(fn ($plan) => ['id' => $plan->id, 'label' => "{$plan->plan_name} ({$plan->plan_code}) · ".str($plan->duration)->replace('_', ' ')->title(), 'duration' => $plan->duration, 'price' => (float) $plan->price]),
         ]);
     }
 
     private function payload(CustomerAmcTaggingRequest $request): array
     {
         $data = $request->validated();
+        if ($data['payment_collected_by'] === 'technician') {
+            $data['paid_amount'] = null;
+            $data['payment_method'] = null;
+            $data['payment_remarks'] = null;
+        }
         $plan = AmcPlan::findOrFail($data['amc_plan_id']);
         $data['end_date'] = CustomerAmcTagging::calculateEndDate(Carbon::parse($data['start_date']), $plan->duration)->toDateString();
 

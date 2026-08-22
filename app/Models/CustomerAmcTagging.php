@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CustomerAmcTagging extends Model
 {
-    protected $fillable = ['customer_id', 'machine_id', 'amc_plan_id', 'start_date', 'end_date', 'created_by'];
+    protected $fillable = ['customer_id', 'machine_id', 'amc_plan_id', 'service_count', 'payment_collected_by', 'paid_amount', 'payment_method', 'payment_remarks', 'start_date', 'end_date', 'created_by'];
 
     protected function casts(): array
     {
-        return ['start_date' => 'date', 'end_date' => 'date'];
+        return ['service_count' => 'integer', 'paid_amount' => 'decimal:2', 'start_date' => 'date', 'end_date' => 'date'];
     }
 
     public static function calculateEndDate(CarbonInterface $startDate, string $duration): CarbonInterface
