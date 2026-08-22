@@ -31,6 +31,7 @@
             <tr x-cloak x-show="expanded === {{ $record->id }}" x-transition>
                 <td colspan="10" class="border-t border-blue-100 bg-blue-50/40 p-5">
                     <div class="mb-3 flex items-center justify-between"><div><h3 class="font-semibold text-slate-900">AMC Service Requests</h3><p class="text-xs text-slate-500">{{ $record->serviceRequests->count() }} of {{ $record->service_count }} service slots created</p></div></div>
+                    @if($record->service_count > 0)
                     <div class="space-y-2">
                         @foreach(range(1, $record->service_count) as $serviceNumber)
                             @php($existingRequest = $record->serviceRequests->firstWhere('amc_service_number', $serviceNumber))
@@ -54,6 +55,9 @@
                             </div>
                         @endforeach
                     </div>
+                    @else
+                        <div class="rounded-xl border border-dashed border-slate-300 bg-white p-5 text-center text-sm text-slate-500">No services included in this AMC plan.</div>
+                    @endif
                 </td>
             </tr>
         @empty

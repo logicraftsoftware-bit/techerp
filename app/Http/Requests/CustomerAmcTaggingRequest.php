@@ -22,7 +22,7 @@ class CustomerAmcTaggingRequest extends FormRequest
                 Rule::exists('machines', 'id')->where(fn ($query) => $query->where('status', 'active')->whereNull('deleted_at')),
             ],
             'amc_plan_id' => ['required', 'integer', Rule::exists('amc_plans', 'id')->where('status', 'active')],
-            'service_count' => ['required', 'integer', 'min:1', 'max:999'],
+            'service_count' => ['required', 'integer', 'min:0', 'max:999'],
             'payment_collected_by' => ['required', Rule::in(['staff', 'technician'])],
             'paid_amount' => [Rule::requiredIf($this->input('payment_collected_by') === 'staff'), 'nullable', 'numeric', 'min:0'],
             'payment_method' => [Rule::requiredIf($this->input('payment_collected_by') === 'staff'), 'nullable', Rule::in(['cash', 'upi', 'card', 'bank_transfer', 'cheque'])],

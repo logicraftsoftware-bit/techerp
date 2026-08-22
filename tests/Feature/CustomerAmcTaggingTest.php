@@ -110,6 +110,20 @@ class CustomerAmcTaggingTest extends TestCase
         ])->assertSessionHasErrors(['paid_amount', 'payment_method', 'payment_remarks']);
     }
 
+    public function test_zero_services_is_accepted_and_renders_without_service_slots(): void
+    {
+        $this->actingAs($this->admin)->post(route('customer-amc-taggings.store'), [
+            'customer_id' => $this->customer->id, 'machine_id' => $this->machine->id,
+            'amc_plan_id' => $this->plan->id, 'service_count' => 0,
+            'payment_collected_by' => 'technician', 'start_date' => '2026-08-22',
+        ])->assertRedirect(route('customer-amc-taggings.index'));
+
+        $this->assertDatabaseHas('customer_amc_taggings', ['service_count' => 0]);
+        $this->actingAs($this->admin)->get(route('customer-amc-taggings.index'))->assertOk()
+            ->assertSee('No services included in this AMC plan.')
+            ->assertDontSee('Service Request - 0');
+    }
+
     public function test_amc_service_slots_create_prefilled_linked_service_requests_once(): void
     {
         $tagging = CustomerAmcTagging::create([
