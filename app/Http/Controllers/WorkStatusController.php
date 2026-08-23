@@ -25,7 +25,7 @@ class WorkStatusController extends Controller
 
     public function show(WorkAssignment $assignment): View
     {
-        return view('work-status.show', ['assignment' => $assignment->load(['serviceRequest.customer', 'serviceRequest.machine', 'technician', 'statusHistories.changedBy'])]);
+        return view('work-status.show', ['assignment' => $assignment->load(['serviceRequest.customer', 'serviceRequest.machine', 'technician', 'statusHistories.changedBy', 'statusHistories.changedByTechnician'])]);
     }
 
     public function update(Request $request, WorkAssignment $assignment): RedirectResponse

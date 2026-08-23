@@ -22,6 +22,6 @@ class ServiceReportController extends Controller
 
     public function show(ServiceRequest $serviceRequest): View
     {
-        return view('service-reports.show', ['serviceRequest' => $serviceRequest->load(['customer', 'machine', 'creator', 'amcPlans', 'workAssignments.technician', 'workAssignments.statusHistories.changedBy'])]);
+        return view('service-reports.show', ['serviceRequest' => $serviceRequest->load(['customer', 'machine', 'creator', 'amcPlans', 'workAssignments.technician', 'workAssignments.statusHistories.changedBy', 'workAssignments.statusHistories.changedByTechnician'])]);
     }
 }

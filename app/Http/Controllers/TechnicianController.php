@@ -95,6 +95,9 @@ class TechnicianController extends Controller
             }$technician->update($data);
             $technician->skills()->sync($r->validated('skills', []));
             $technician->commissionTypes()->sync($r->validated('commission_type_ids', []));
+            if ($technician->status !== 'active') {
+                $technician->tokens()->delete();
+            }
         });
 
         return to_route('technicians.index')->with('success', 'Technician updated.');

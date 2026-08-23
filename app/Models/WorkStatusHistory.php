@@ -18,4 +18,9 @@ class WorkStatusHistory extends Model
     {
         return $this->belongsTo(User::class, 'changed_by');
     }
+
+    public function changedByTechnician(): BelongsTo
+    {
+        return $this->belongsTo(Technician::class, 'changed_by_technician_id');
+    }
 }

@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
-class Technician extends Model
+class Technician extends Authenticatable
 {
-    use SoftDeletes;
+    use HasApiTokens, Notifiable, SoftDeletes;
 
     protected $guarded = ['id'];
 
@@ -70,5 +72,30 @@ class Technician extends Model
     public function workAssignments(): HasMany
     {
         return $this->hasMany(WorkAssignment::class);
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    public function leaves(): HasMany
+    {
+        return $this->hasMany(TechnicianLeave::class);
+    }
+
+    public function salaryRecords(): HasMany
+    {
+        return $this->hasMany(SalaryRecord::class);
+    }
+
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
+
+    public function loginLogs(): HasMany
+    {
+        return $this->hasMany(TechnicianLoginLog::class);
     }
 }

@@ -155,7 +155,7 @@
                 <td>WSH-{{ $history->id }}</td>
                 <td>{{ $history->created_at->format('d/m/Y') }}</td>
                 <td>{{ $history->from_status ? str($history->from_status)->replace('_', ' ')->title().' -> ' : '' }}{{ str($history->to_status)->replace('_', ' ')->title() }}</td>
-                <td>{{ $history->changedBy?->name ?? 'System' }}</td>
+                <td>{{ $history->changedBy?->name ?? $history->changedByTechnician?->name ?? 'System' }}</td>
             </tr>
         @empty
             <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>

@@ -7,11 +7,14 @@ use App\Models\JobPart;
 use App\Models\ServiceRequest;
 use App\Models\Technician;
 use App\Models\WorkAssignment;
+use App\Notifications\JobAssigned;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use Throwable;
 
 class WorkAssignmentController extends Controller
 {
@@ -44,6 +47,12 @@ class WorkAssignmentController extends Controller
         $assignment = WorkAssignment::create($request->validated() + ['priority' => $serviceRequest->priority, 'assigned_by' => $request->user()->id]);
         $serviceRequest->update(['status' => $assignment->status]);
         $assignment->statusHistories()->create(['to_status' => $assignment->status, 'remarks' => 'Work assignment created.', 'changed_by' => $request->user()->id]);
+
+        try {
+            $assignment->technician->notify(new JobAssigned($assignment));
+        } catch (Throwable $e) {
+            Log::error('JobAssigned notification failed: '.$e->getMessage());
+        }
 
         return to_route('assignments.index')->with('success', 'Work assigned successfully.');
     }
@@ -81,7 +90,7 @@ class WorkAssignmentController extends Controller
     public function jobCard(Request $request, WorkAssignment $assignment): Response
     {
         $this->authorizeDocumentView($request);
-        $assignment->load(['serviceRequest.customer', 'serviceRequest.machine', 'serviceRequest.amcPlans', 'technician', 'statusHistories.changedBy']);
+        $assignment->load(['serviceRequest.customer', 'serviceRequest.machine', 'serviceRequest.amcPlans', 'technician', 'statusHistories.changedBy', 'statusHistories.changedByTechnician']);
         $jobParts = JobPart::where('work_assignment_id', $assignment->id)->with('part')->get();
         $logo = $this->dataUri(public_path('images/fieldservice-logo.png'), 'image/png');
 
