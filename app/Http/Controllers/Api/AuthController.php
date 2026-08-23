@@ -35,7 +35,7 @@ class AuthController extends Controller
         ]);
         $technician->update(['last_login_at' => now(), 'last_login_ip' => $request->ip()]);
 
-        $token = $technician->createToken($data['device_name'] ?? 'mobile-app')->plainTextToken;
+        $token = explode('|', $technician->createToken($data['device_name'] ?? 'mobile-app')->plainTextToken, 2)[1];
 
         return response()->json([
             'token' => $token,
