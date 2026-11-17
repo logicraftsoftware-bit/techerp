@@ -8,15 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('machines', function (Blueprint $table) {
-            $table->string('machine_type')->nullable();
-        });
+        // The original master-data migration already creates this column.
+        if (! Schema::hasColumn('machines', 'machine_type')) {
+            Schema::table('machines', function (Blueprint $table) {
+                $table->string('machine_type')->nullable()->index();
+            });
+        }
     }
 
     public function down(): void
     {
-        Schema::table('machines', function (Blueprint $table) {
-            $table->dropColumn('machine_type');
-        });
+        // Preserve the column owned by the original master-data migration.
     }
 };
