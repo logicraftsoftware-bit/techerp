@@ -32,6 +32,7 @@
             this.$dispatch('searchable-select-changed', { name: @js($name), value: '' });
         }
     }"
+    @customer-created.window="if (@js($name) === 'customer_id') { options.push({value: String($event.detail.id), label: $event.detail.label}); choose(options[options.length - 1]); }"
     @click.outside="open = false"
 >
     <label class="form-label">{{ $label }} @if($required ?? false)*@endif</label>

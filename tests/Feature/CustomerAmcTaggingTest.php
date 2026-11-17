@@ -101,13 +101,52 @@ class CustomerAmcTaggingTest extends TestCase
             ->assertSee('Paid Amount');
     }
 
-    public function test_staff_collection_requires_payment_details(): void
+    public function test_staff_collection_accepts_optional_payment_details(): void
     {
         $this->actingAs($this->admin)->post(route('customer-amc-taggings.store'), [
             'customer_id' => $this->customer->id, 'machine_id' => $this->machine->id,
             'amc_plan_id' => $this->plan->id, 'service_count' => 4,
             'payment_collected_by' => 'staff', 'start_date' => '2026-08-22',
-        ])->assertSessionHasErrors(['paid_amount', 'payment_method', 'payment_remarks']);
+        ])->assertRedirect(route('customer-amc-taggings.index'));
+        $this->assertDatabaseHas('customer_amc_taggings', ['payment_collected_by' => 'staff', 'paid_amount' => null]);
+    }
+
+    public function test_technician_payment_details_are_saved(): void
+    {
+        $this->actingAs($this->admin)->post(route('customer-amc-taggings.store'), [
+            'customer_id' => $this->customer->id, 'machine_id' => $this->machine->id,
+            'customer_type' => 'amc', 'amc_plan_id' => $this->plan->id,
+            'service_count' => 2, 'start_date' => '2026-08-22',
+            'payment_collected_by' => 'technician', 'paid_amount' => 500,
+            'payment_method' => 'cash', 'payment_remarks' => 'Collected on site',
+        ])->assertRedirect(route('customer-amc-taggings.index'));
+        $this->assertDatabaseHas('customer_amc_taggings', ['paid_amount' => 500, 'payment_method' => 'cash', 'payment_remarks' => 'Collected on site']);
+    }
+
+    public function test_non_amc_customer_types_do_not_require_amc_details(): void
+    {
+        foreach (['in_warranty', 'out_of_warranty'] as $type) {
+            $this->actingAs($this->admin)->post(route('customer-amc-taggings.store'), [
+                'customer_id' => $this->customer->id, 'machine_id' => $this->machine->id,
+                'customer_type' => $type, 'payment_collected_by' => 'staff',
+            ])->assertRedirect(route('customer-amc-taggings.index'));
+            $this->assertDatabaseHas('customer_amc_taggings', ['customer_type' => $type, 'amc_plan_id' => null, 'start_date' => null, 'end_date' => null, 'service_count' => 0]);
+        }
+        $this->actingAs($this->admin)->get(route('customer-amc-taggings.index'))->assertOk()->assertSee('In Warranty')->assertSee('Out Of Warranty');
+    }
+
+    public function test_popup_customer_creation_returns_customer_option_and_saves_contacts(): void
+    {
+        $this->actingAs($this->admin)->get(route('customers.create', ['embedded' => 1]))->assertOk()->assertSee('Additional contacts');
+        $this->actingAs($this->admin)->postJson(route('customers.store'), [
+            'entry_type' => 'crm', 'refer_type' => 'self', 'customer_type' => 'individual',
+            'customer_name' => 'Popup Customer', 'mobile' => '9000000011',
+            'address' => 'Test Road', 'city' => 'Kolkata', 'state' => 'West Bengal',
+            'pin_code' => '700001', 'status' => 'active',
+            'contacts' => [['name' => 'Site Contact', 'mobile' => '9000000012']],
+        ])->assertCreated()->assertJsonStructure(['id', 'label']);
+        $customer = Customer::where('customer_name', 'Popup Customer')->firstOrFail();
+        $this->assertSame('Site Contact', $customer->contacts()->firstOrFail()->name);
     }
 
     public function test_zero_services_is_accepted_and_renders_without_service_slots(): void

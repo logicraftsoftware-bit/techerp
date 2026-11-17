@@ -87,13 +87,12 @@ class CustomerAmcTaggingController extends Controller
     private function payload(CustomerAmcTaggingRequest $request): array
     {
         $data = $request->validated();
-        if ($data['payment_collected_by'] === 'technician') {
-            $data['paid_amount'] = null;
-            $data['payment_method'] = null;
-            $data['payment_remarks'] = null;
+        if ($data['customer_type'] === 'amc') {
+            $plan = AmcPlan::findOrFail($data['amc_plan_id']);
+            $data['end_date'] = CustomerAmcTagging::calculateEndDate(Carbon::parse($data['start_date']), $plan->duration)->toDateString();
+        } else {
+            $data = array_merge($data, ['amc_plan_id' => null, 'service_count' => 0, 'start_date' => null, 'end_date' => null]);
         }
-        $plan = AmcPlan::findOrFail($data['amc_plan_id']);
-        $data['end_date'] = CustomerAmcTagging::calculateEndDate(Carbon::parse($data['start_date']), $plan->duration)->toDateString();
 
         return $data;
     }

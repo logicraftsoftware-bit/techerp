@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class CustomerAmcTagging extends Model
 {
-    protected $fillable = ['customer_id', 'machine_id', 'amc_plan_id', 'service_count', 'payment_collected_by', 'paid_amount', 'payment_method', 'payment_remarks', 'start_date', 'end_date', 'created_by'];
+    protected $fillable = ['customer_type', 'customer_id', 'machine_id', 'amc_plan_id', 'service_count', 'payment_collected_by', 'paid_amount', 'payment_method', 'payment_remarks', 'start_date', 'end_date', 'created_by'];
 
     protected function casts(): array
     {

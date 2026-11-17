@@ -1,4 +1,4 @@
-@extends('layouts.app',['title'=>$customer->exists?'Edit Customer':'Add Customer']) @section('content')
+@extends(request()->boolean('embedded') ? 'layouts.embedded' : 'layouts.app',['title'=>$customer->exists?'Edit Customer':'Add Customer']) @section('content')
 <form method="POST" action="{{$customer->exists?route('customers.update',$customer):route('customers.store')}}" class="mx-auto max-w-6xl" x-data="{referType: '{{ old('refer_type',$customer->refer_type?:'self') }}'}">@csrf @if($customer->exists)@method('PUT')@endif
 <div class="mb-6 flex items-end justify-between"><div><h2 class="text-2xl font-bold text-slate-900">{{$customer->exists?'Edit':'Add'}} Customer</h2><p class="text-sm text-slate-500">Complete customer identity, tax, contact and location information.</p></div><button class="btn-primary">Save Customer</button></div>
 <section class="card p-6"><h3 class="mb-5 font-bold">Customer details</h3><div class="grid gap-5 md:grid-cols-2">

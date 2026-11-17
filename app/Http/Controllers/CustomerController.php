@@ -32,14 +32,17 @@ class CustomerController extends Controller
         return $this->form(new Customer);
     }
 
-    public function store(CustomerRequest $r): RedirectResponse
+    public function store(CustomerRequest $r): RedirectResponse|\Illuminate\Http\JsonResponse
     {
-        DB::transaction(function () use ($r) {
+        $customer = DB::transaction(function () use ($r) {
             $data = $this->customerData($r);
             $c = Customer::create($data);
             $c->contacts()->createMany(collect($r->validated('contacts', []))->filter(fn ($x) => ! empty($x['name']))->all());
+            return $c;
         });
-
+        if ($r->expectsJson()) {
+            return response()->json(['id' => $customer->id, 'label' => "{$customer->customer_name} ({$customer->customer_code}) - {$customer->mobile}"], 201);
+        }
         return to_route('customers.index')->with('success', 'Customer created.');
     }
 
