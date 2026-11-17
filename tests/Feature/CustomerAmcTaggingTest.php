@@ -220,4 +220,42 @@ class CustomerAmcTaggingTest extends TestCase
             ->assertOk()->assertHeader('content-type', 'application/pdf')
             ->assertDownload($assignment->assignment_code.'-bill.pdf');
     }
+
+    public function test_filters_and_exports_use_the_same_matching_records(): void
+    {
+        $matching = CustomerAmcTagging::create([
+            'customer_id' => $this->customer->id, 'machine_id' => $this->machine->id,
+            'customer_type' => 'in_warranty', 'service_count' => 0,
+            'payment_collected_by' => 'technician', 'created_by' => $this->admin->id,
+        ]);
+        $otherCustomer = Customer::create(['customer_name' => 'Excluded Customer', 'mobile' => '9000000033', 'address' => 'Other Road', 'city' => 'Delhi', 'state' => 'Delhi', 'pin_code' => '110001']);
+        CustomerAmcTagging::create([
+            'customer_id' => $otherCustomer->id, 'machine_id' => $this->machine->id,
+            'customer_type' => 'out_of_warranty', 'service_count' => 0,
+            'payment_collected_by' => 'staff', 'created_by' => $this->admin->id,
+        ]);
+        $filters = [
+            'customer_type' => 'in_warranty', 'area' => 'Kolkata',
+            'machine_id' => $this->machine->id, 'model' => $this->machine->model,
+            'from_date' => today()->toDateString(), 'to_date' => today()->toDateString(),
+        ];
+        $this->actingAs($this->admin)->get(route('customer-amc-taggings.index', $filters))
+            ->assertOk()->assertViewHas('records', fn ($records) => $records->total() === 1 && $records->first()->id === $matching->id);
+        $csv = $this->actingAs($this->admin)->get(route('customer-amc-taggings.index', $filters + ['export' => 'csv']))
+            ->assertOk()->assertDownload('customer-taggings.csv')->streamedContent();
+        $this->assertStringContainsString('Acme Industries', $csv);
+        $this->assertStringNotContainsString('Excluded Customer', $csv);
+        $this->actingAs($this->admin)->get(route('customer-amc-taggings.index', $filters + ['export' => 'pdf']))
+            ->assertOk()->assertHeader('content-type', 'application/pdf')->assertDownload('customer-taggings.pdf');
+        $this->actingAs($this->admin)->get(route('customer-amc-taggings.index', ['to_date' => today()->subDay()->toDateString()]))
+            ->assertOk()->assertViewHas('records', fn ($records) => $records->total() === 0);
+    }
+
+    public function test_export_requires_view_permission(): void
+    {
+        $user = User::factory()->create();
+        foreach (['csv', 'pdf'] as $format) {
+            $this->actingAs($user)->get(route('customer-amc-taggings.index', ['export' => $format]))->assertForbidden();
+        }
+    }
 }

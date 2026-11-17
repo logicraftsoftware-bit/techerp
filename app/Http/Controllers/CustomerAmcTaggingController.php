@@ -14,23 +14,61 @@ use Illuminate\View\View;
 
 class CustomerAmcTaggingController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request): View|\Symfony\Component\HttpFoundation\Response
     {
         abort_unless($request->user()->hasRole('super-admin', 'admin') || $request->user()->hasPermission('customer-amc-taggings.view'), 403);
-
-        $records = CustomerAmcTagging::with(['customer', 'machine', 'amcPlan', 'serviceRequests.workAssignments.technician', 'serviceRequests.workAssignments.statusHistories', 'serviceRequests.workAssignments.jobParts'])
-            ->when($request->search, function ($query, $search) {
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:150'],
+            'customer_type' => ['nullable', 'in:in_warranty,amc,out_of_warranty'],
+            'area' => ['nullable', 'string', 'max:100'],
+            'model' => ['nullable', 'string', 'max:150'],
+            'machine_id' => ['nullable', 'integer', 'exists:machines,id'],
+            'from_date' => ['nullable', 'date'],
+            'to_date' => ['nullable', 'date', ...($request->filled('from_date') ? ['after_or_equal:from_date'] : [])],
+            'export' => ['nullable', 'in:csv,pdf'],
+        ]);
+        $query = CustomerAmcTagging::with(['customer', 'machine', 'amcPlan'])
+            ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where(function ($nested) use ($search) {
-                    $nested->whereHas('customer', fn ($q) => $q->where('customer_name', 'like', "%{$search}%")->orWhere('customer_code', 'like', "%{$search}%"))
+                    $nested->whereHas('customer', fn ($q) => $q->where('customer_name', 'like', "%{$search}%")->orWhere('customer_code', 'like', "%{$search}%")->orWhere('mobile', 'like', "%{$search}%"))
                         ->orWhereHas('machine', fn ($q) => $q->where('machine_name', 'like', "%{$search}%")->orWhere('machine_code', 'like', "%{$search}%"))
                         ->orWhereHas('amcPlan', fn ($q) => $q->where('plan_name', 'like', "%{$search}%")->orWhere('plan_code', 'like', "%{$search}%"));
                 });
             })
-            ->orderBy('end_date')
-            ->paginate(15)
-            ->withQueryString();
+            ->when($filters['customer_type'] ?? null, fn ($q, $value) => $q->where('customer_type', $value))
+            ->when($filters['area'] ?? null, fn ($q, $value) => $q->whereHas('customer', fn ($c) => $c->where('city', $value)))
+            ->when($filters['model'] ?? null, fn ($q, $value) => $q->whereHas('machine', fn ($m) => $m->where('model', $value)))
+            ->when($filters['machine_id'] ?? null, fn ($q, $value) => $q->where('machine_id', $value))
+            ->when($filters['from_date'] ?? null, fn ($q, $value) => $q->whereDate('created_at', '>=', $value))
+            ->when($filters['to_date'] ?? null, fn ($q, $value) => $q->whereDate('created_at', '<=', $value))
+            ->orderByDesc('created_at')->orderByDesc('id');
 
-        return view('customer-amc-taggings.index', compact('records'));
+        if (($filters['export'] ?? null) === 'csv') {
+            return response()->streamDownload(function () use ($query) {
+                $file = fopen('php://output', 'w');
+                fwrite($file, "\xEF\xBB\xBF");
+                fputcsv($file, ['Customer', 'Customer Code', 'Mobile', 'Coverage Type', 'Area (City)', 'Machine', 'Model', 'AMC Plan', 'Plan Price', 'Services', 'Collection By', 'Paid Amount', 'Payment Method', 'Remarks', 'Start Date', 'End Date', 'Created Date']);
+                foreach ($query->lazy(500) as $record) {
+                    $row = [$record->customer->customer_name, $record->customer->customer_code, $record->customer->mobile,
+                        $record->customer_type === 'amc' ? 'AMC' : ($record->customer_type === 'in_warranty' ? 'In Warranty' : 'Out Of Warranty'),
+                        $record->customer->city, $record->machine->machine_name, $record->machine->model,
+                        $record->amcPlan?->plan_name, $record->amcPlan?->price, $record->service_count,
+                        $record->payment_collected_by, $record->paid_amount, $record->payment_method, $record->payment_remarks,
+                        $record->start_date?->toDateString(), $record->end_date?->toDateString(), $record->created_at->toDateString()];
+                    fputcsv($file, array_map(fn ($value) => is_string($value) && preg_match('/^[\s]*[=+@-]/', $value) ? "'".$value : $value, $row));
+                }
+                fclose($file);
+            }, 'customer-taggings.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+        }
+        if (($filters['export'] ?? null) === 'pdf') {
+            return \Barryvdh\DomPDF\Facade\Pdf::loadView('customer-amc-taggings.export', ['records' => $query->get(), 'filters' => $filters])
+                ->setPaper('a4', 'landscape')->download('customer-taggings.pdf');
+        }
+        $records = $query->with(['serviceRequests.workAssignments.technician', 'serviceRequests.workAssignments.statusHistories', 'serviceRequests.workAssignments.jobParts'])->paginate(15)->withQueryString();
+        $areas = Customer::whereNotNull('city')->where('city', '!=', '')->distinct()->orderBy('city')->pluck('city');
+        $models = Machine::whereNotNull('model')->where('model', '!=', '')->distinct()->orderBy('model')->pluck('model');
+        $machines = Machine::orderBy('machine_name')->get(['id', 'machine_name', 'machine_code']);
+        return view('customer-amc-taggings.index', compact('records', 'areas', 'models', 'machines'));
     }
 
     public function create(): View
