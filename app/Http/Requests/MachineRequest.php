@@ -15,6 +15,7 @@ class MachineRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'machine_type' => ['nullable', Rule::in(['retail', 'premium', 'others'])],
             'machine_name' => ['required', 'string', 'max:150'],
             'brand_id' => ['required', 'exists:brands,id'],
             'machine_category_id' => ['required', 'exists:machine_categories,id'],

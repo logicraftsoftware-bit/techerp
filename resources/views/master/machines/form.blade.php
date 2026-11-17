@@ -7,6 +7,7 @@
 @include('master._field',['model'=>$machine,'name'=>'machine_name','label'=>'Machine Name','required'=>true])
 <div>@include('master._searchable_select', ['name' => 'brand_id', 'label' => 'Brand Name', 'options' => $brands, 'labelKey' => 'brand_name', 'selected' => $machine->brand_id, 'placeholder' => 'Search or select brand', 'required' => true])<a class="mt-1 inline-block text-xs text-blue-600" href="{{route('brands.create')}}">+ Add brand</a></div>
 <div>@include('master._searchable_select', ['name' => 'machine_category_id', 'label' => 'Machine Category', 'options' => $categories, 'labelKey' => 'category_name', 'selected' => $machine->machine_category_id, 'placeholder' => 'Search or select category', 'required' => true])<a class="mt-1 inline-block text-xs text-blue-600" href="{{route('machine-categories.create')}}">+ Add category</a></div>
+@include('master._field',['model'=>$machine,'name'=>'machine_type','label'=>'Machine Type','type'=>'select','options'=>[''=>'Select machine type','retail'=>'Retail','premium'=>'Premium','others'=>'Others']])
 @include('master._field',['model'=>$machine,'name'=>'model','label'=>'Model Name','required'=>true])
 @include('master._field',['model'=>$machine,'name'=>'manufacturing_date','label'=>'Mfg Date','type'=>'date'])
 @include('master._field',['model'=>$machine,'name'=>'service_period','label'=>'Free Service Period','type'=>'select','required'=>true,'options'=>['4_months'=>'4 Months','6_months'=>'6 Months','1_year'=>'1 Year','2_years'=>'2 Years']])

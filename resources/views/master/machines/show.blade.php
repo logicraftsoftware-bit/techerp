@@ -15,6 +15,7 @@
         @foreach([
             'Machine Category' => $machine->machineCategory?->category_name,
             'Brand' => $machine->brand,
+            'Machine Type' => $machine->machine_type ? ucfirst($machine->machine_type) : null,
             'Model' => $machine->model,
             'Mfg Date' => $machine->manufacturing_date?->format('d M Y'),
             'Free Service Period' => str($machine->service_period)->replace('_', ' ')->title(),
