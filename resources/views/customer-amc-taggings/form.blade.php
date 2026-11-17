@@ -1,17 +1,33 @@
 @extends('layouts.app', ['title' => $tagging->exists ? 'Edit Customer-AMC Tagging' : 'Add Customer-AMC Tagging'])
 
 @section('content')
+<style>
+    .amc-tagging-form { width: 100%; max-width: none; }
+    .amc-customer-picker { position: relative; }
+    .amc-customer-picker .form-label { padding-right: 90px; }
+    .amc-new-customer { position: absolute; right: 0; top: -4px; z-index: 1; padding: 3px 12px; font-size: 12px; }
+    .amc-customer-dialog { position: fixed; inset: 0; margin: auto; width: min(1120px, calc(100vw - 48px)); max-width: none; height: min(860px, calc(100dvh - 48px)); max-height: calc(100dvh - 48px); padding: 0; border: 0; border-radius: 20px; overflow: hidden; box-shadow: 0 24px 80px rgb(15 23 42 / 30%); }
+    .amc-customer-dialog::backdrop { background: rgb(15 23 42 / 55%); }
+    .amc-customer-dialog[open] { display: flex; flex-direction: column; }
+    .amc-customer-dialog-header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; gap: 16px; padding: 16px 24px; border-bottom: 1px solid #e2e8f0; background: white; }
+    .amc-customer-dialog iframe { display: block; width: 100%; flex: 1; min-height: 0; border: 0; background: #f8fafc; }
+    html:has(.amc-customer-dialog[open]) { overflow: hidden; }
+    @media (max-width: 640px) {
+        .amc-customer-dialog { width: calc(100vw - 16px); height: calc(100dvh - 16px); max-height: calc(100dvh - 16px); border-radius: 12px; }
+        .amc-customer-dialog-header { padding: 12px 16px; }
+    }
+</style>
 @php
     $collectorOptions = [['id' => 'staff', 'label' => 'Payment collected by Staff'], ['id' => 'technician', 'label' => 'Payment collected by Technician']];
     $paymentMethods = [['id' => 'cash', 'label' => 'Cash'], ['id' => 'upi', 'label' => 'UPI'], ['id' => 'card', 'label' => 'Card'], ['id' => 'bank_transfer', 'label' => 'Bank Transfer'], ['id' => 'cheque', 'label' => 'Cheque']];
 @endphp
-<form method="POST" action="{{ $tagging->exists ? route('customer-amc-taggings.update', $tagging) : route('customer-amc-taggings.store') }}" class="mx-auto max-w-4xl"
+<form method="POST" action="{{ $tagging->exists ? route('customer-amc-taggings.update', $tagging) : route('customer-amc-taggings.store') }}" class="amc-tagging-form"
       x-data="amcTaggingForm(@js($plans), @js(['customerType' => old('customer_type', $tagging->customer_type ?? 'amc'), 'planId' => (string) old('amc_plan_id', $tagging->amc_plan_id), 'startDate' => old('start_date', $tagging->start_date?->format('Y-m-d')), 'paymentBy' => old('payment_collected_by', $tagging->payment_collected_by)]))"
       @searchable-select-changed.window="selectChanged($event.detail)">
     @csrf @if($tagging->exists) @method('PUT') @endif
     <div class="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><h2 class="text-2xl font-bold text-slate-900">{{ $tagging->exists ? 'Edit' : 'Add' }} Customer-AMC Tagging</h2><p class="text-sm text-slate-500">Select a customer, a machine and the customer coverage type.</p></div><button class="btn-primary">Save Tagging</button></div>
     <section class="card p-6"><div class="grid gap-5 md:grid-cols-2">
-        <div><button type="button" class="btn-secondary float-right" @click="$dispatch('open-customer')">New +</button>
+        <div class="amc-customer-picker"><button type="button" class="btn-secondary amc-new-customer" @click="$dispatch('open-customer')">New +</button>
         @include('master._searchable_select', ['name' => 'customer_id', 'label' => 'Choose Customer', 'options' => $customers, 'labelKey' => 'label', 'selected' => $tagging->customer_id, 'placeholder' => 'Search or select customer', 'required' => true])</div>
         @include('master._searchable_select', ['name' => 'machine_id', 'label' => 'Choose Machine from Machine Master', 'options' => $machines, 'labelKey' => 'label', 'selected' => $tagging->machine_id, 'placeholder' => 'Search by machine name, code or model', 'required' => true])
         <div><label class="form-label">Customer Type *</label><select name="customer_type" x-model="customerType" class="form-input" required><option value="in_warranty">In Warranty</option><option value="amc">AMC</option><option value="out_of_warranty">Out Of Warranty</option></select></div>
@@ -32,9 +48,9 @@
     </div></section>
     <div class="mt-6 flex justify-end gap-3"><a href="{{ route('customer-amc-taggings.index') }}" class="btn-secondary">Cancel</a><button class="btn-primary">Save Tagging</button></div>
 </form>
-<dialog x-data @open-customer.window="$el.showModal()" @customer-created.window="$el.close()" @close-customer.window="$el.close()" class="w-full max-w-5xl rounded-2xl p-0 backdrop:bg-slate-950/50">
-<div class="flex items-center justify-between border-b p-4"><h3 class="font-bold">New Customer</h3><button type="button" class="btn-secondary" @click="$el.closest('dialog').close()">Close</button></div>
-<iframe src="{{ route('customers.create', ['embedded' => 1]) }}" title="Create customer" class="w-full border-0" style="height:75vh"></iframe>
+<dialog x-data @open-customer.window="$el.showModal()" @customer-created.window="$el.close()" @close-customer.window="$el.close()" class="amc-customer-dialog" aria-label="Create new customer">
+<div class="amc-customer-dialog-header"><h3 class="font-bold">New Customer</h3><button type="button" class="btn-secondary" @click="$el.closest('dialog').close()">Close</button></div>
+<iframe src="{{ route('customers.create', ['embedded' => 1]) }}" title="Create customer" ></iframe>
 </dialog>
 @endsection
 
