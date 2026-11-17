@@ -23,6 +23,16 @@
 .dark .tagging-results tbody tr:hover { background-color: #1e293b; }
 @media(max-width:1100px) { .tagging-filter-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media(max-width:640px) { .tagging-filter-grid { grid-template-columns: 1fr; } .tagging-filter-actions .export-actions { margin-left: 0; width: 100%; } }
+.filter-multi { position: relative; min-width: 0; }
+.filter-multi-trigger { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; min-height: 42px; }
+.filter-multi-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.filter-multi-menu { position: absolute; left: 0; right: 0; top: 100%; z-index: 60; margin-top: 6px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 12px; background: white; box-shadow: 0 12px 32px rgb(15 23 42 / 15%); }
+.filter-multi-options { max-height: 230px; overflow-y: auto; margin-top: 8px; }
+.filter-multi-option { display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-radius: 7px; font-size: 13px; cursor: pointer; overflow-wrap: anywhere; }
+.filter-multi-option:hover { background: #eff6ff; }
+.filter-multi-tools { display: flex; justify-content: space-between; padding: 9px 2px 2px; font-size: 12px; color: #2563eb; }
+.dark .filter-multi-menu { background: #0f172a; border-color: #334155; }
+.dark .filter-multi-option:hover { background: #1e293b; }
 </style>
 @php($isAdmin = auth()->user()->hasRole('super-admin', 'admin'))
 @php($canCreateServiceRequest = $isAdmin || auth()->user()->hasPermission('service-requests.create'))
@@ -34,10 +44,10 @@
 <form method="GET" action="{{ route('customer-amc-taggings.index') }}" class="card tagging-filters">
     <div class="tagging-filter-grid">
         <div><label class="form-label" for="search">Search</label><input id="search" name="search" value="{{ request('search') }}" class="form-input" placeholder="Customer, mobile, machine or plan"></div>
-        <div><label class="form-label" for="coverage">Customer Type</label><select id="coverage" name="customer_type" class="form-input"><option value="">All types</option>@foreach(['in_warranty' => 'In Warranty', 'amc' => 'AMC', 'out_of_warranty' => 'Out Of Warranty'] as $value => $label)<option value="{{ $value }}" @selected(request('customer_type') === $value)>{{ $label }}</option>@endforeach</select></div>
-        <div><label class="form-label" for="area">Area (Customer City)</label><select id="area" name="area" class="form-input"><option value="">All areas</option>@foreach($areas as $area)<option value="{{ $area }}" @selected(request('area') === $area)>{{ $area }}</option>@endforeach</select></div>
-        <div><label class="form-label" for="machine">Machine</label><select id="machine" name="machine_id" class="form-input"><option value="">All machines</option>@foreach($machines as $machine)<option value="{{ $machine->id }}" @selected((string) request('machine_id') === (string) $machine->id)>{{ $machine->machine_name }} ({{ $machine->machine_code }})</option>@endforeach</select></div>
-        <div><label class="form-label" for="model">Model</label><select id="model" name="model" class="form-input"><option value="">All models</option>@foreach($models as $model)<option value="{{ $model }}" @selected(request('model') === $model)>{{ $model }}</option>@endforeach</select></div>
+        @include('master._searchable_multiselect', ['name' => 'customer_type', 'label' => 'Customer Type', 'options' => collect(['in_warranty' => 'In Warranty', 'amc' => 'AMC', 'out_of_warranty' => 'Out Of Warranty'])->map(fn ($label, $value) => ['value' => $value, 'label' => $label])->values()])
+        @include('master._searchable_multiselect', ['name' => 'area', 'label' => 'Area (Customer City)', 'options' => $areas->map(fn ($area) => ['value' => $area, 'label' => $area])])
+        @include('master._searchable_multiselect', ['name' => 'machine_id', 'label' => 'Machine', 'options' => $machines->map(fn ($machine) => ['value' => (string) $machine->id, 'label' => $machine->machine_name.' ('.$machine->machine_code.')'])])
+        @include('master._searchable_multiselect', ['name' => 'model', 'label' => 'Model', 'options' => $models->map(fn ($model) => ['value' => $model, 'label' => $model])])
         <div><label class="form-label" for="from-date">From Date (Created)</label><input id="from-date" type="date" name="from_date" value="{{ request('from_date') }}" class="form-input"></div>
         <div><label class="form-label" for="to-date">To Date (Created)</label><input id="to-date" type="date" name="to_date" value="{{ request('to_date') }}" class="form-input"></div>
     </div>

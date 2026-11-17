@@ -17,12 +17,21 @@ class CustomerAmcTaggingController extends Controller
     public function index(Request $request): View|\Symfony\Component\HttpFoundation\Response
     {
         abort_unless($request->user()->hasRole('super-admin', 'admin') || $request->user()->hasPermission('customer-amc-taggings.view'), 403);
+        // Accept existing bookmarked single-value filters as well as multiple selections.
+        foreach (['customer_type', 'area', 'model', 'machine_id'] as $field) {
+            $value = $request->input($field);
+            $request->merge([$field => is_array($value) ? $value : ($value !== null && $value !== '' ? [$value] : [])]);
+        }
         $filters = $request->validate([
             'search' => ['nullable', 'string', 'max:150'],
-            'customer_type' => ['nullable', 'in:in_warranty,amc,out_of_warranty'],
-            'area' => ['nullable', 'string', 'max:100'],
-            'model' => ['nullable', 'string', 'max:150'],
-            'machine_id' => ['nullable', 'integer', 'exists:machines,id'],
+            'customer_type' => ['array', 'max:500'],
+            'customer_type.*' => ['in:in_warranty,amc,out_of_warranty'],
+            'area' => ['array', 'max:500'],
+            'area.*' => ['string', 'max:100'],
+            'model' => ['array', 'max:500'],
+            'model.*' => ['string', 'max:150'],
+            'machine_id' => ['array', 'max:500'],
+            'machine_id.*' => ['integer', 'exists:machines,id'],
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', ...($request->filled('from_date') ? ['after_or_equal:from_date'] : [])],
             'export' => ['nullable', 'in:csv,pdf'],
@@ -35,10 +44,10 @@ class CustomerAmcTaggingController extends Controller
                         ->orWhereHas('amcPlan', fn ($q) => $q->where('plan_name', 'like', "%{$search}%")->orWhere('plan_code', 'like', "%{$search}%"));
                 });
             })
-            ->when($filters['customer_type'] ?? null, fn ($q, $value) => $q->where('customer_type', $value))
-            ->when($filters['area'] ?? null, fn ($q, $value) => $q->whereHas('customer', fn ($c) => $c->where('city', $value)))
-            ->when($filters['model'] ?? null, fn ($q, $value) => $q->whereHas('machine', fn ($m) => $m->where('model', $value)))
-            ->when($filters['machine_id'] ?? null, fn ($q, $value) => $q->where('machine_id', $value))
+            ->when($filters['customer_type'] ?? null, fn ($q, $value) => $q->whereIn('customer_type', $value))
+            ->when($filters['area'] ?? null, fn ($q, $value) => $q->whereHas('customer', fn ($c) => $c->whereIn('city', $value)))
+            ->when($filters['model'] ?? null, fn ($q, $value) => $q->whereHas('machine', fn ($m) => $m->whereIn('model', $value)))
+            ->when($filters['machine_id'] ?? null, fn ($q, $value) => $q->whereIn('machine_id', $value))
             ->when($filters['from_date'] ?? null, fn ($q, $value) => $q->whereDate('created_at', '>=', $value))
             ->when($filters['to_date'] ?? null, fn ($q, $value) => $q->whereDate('created_at', '<=', $value))
             ->orderByDesc('created_at')->orderByDesc('id');

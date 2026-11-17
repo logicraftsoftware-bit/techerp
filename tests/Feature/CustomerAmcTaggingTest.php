@@ -258,4 +258,29 @@ class CustomerAmcTaggingTest extends TestCase
             $this->actingAs($user)->get(route('customer-amc-taggings.index', ['export' => $format]))->assertForbidden();
         }
     }
+
+    public function test_multiple_filter_values_match_any_selection_and_export_all_matches(): void
+    {
+        foreach (['in_warranty', 'out_of_warranty'] as $type) {
+            CustomerAmcTagging::create([
+                'customer_id' => $this->customer->id, 'machine_id' => $this->machine->id,
+                'customer_type' => $type, 'service_count' => 0, 'payment_collected_by' => 'staff',
+            ]);
+        }
+        $filters = [
+            'customer_type' => ['in_warranty', 'out_of_warranty'],
+            'area' => ['Kolkata', 'Delhi'], 'model' => [$this->machine->model, 'Other Model'],
+            'machine_id' => [$this->machine->id],
+        ];
+        $this->actingAs($this->admin)->get(route('customer-amc-taggings.index', $filters))
+            ->assertOk()->assertViewHas('records', fn ($records) => $records->total() === 2);
+        $csv = $this->actingAs($this->admin)->get(route('customer-amc-taggings.index', $filters + ['export' => 'csv']))
+            ->assertOk()->streamedContent();
+        $this->assertStringContainsString('In Warranty', $csv);
+        $this->assertStringContainsString('Out Of Warranty', $csv);
+        $this->actingAs($this->admin)->get(route('customer-amc-taggings.index', $filters + ['export' => 'pdf']))
+            ->assertOk()->assertHeader('content-type', 'application/pdf');
+        $this->actingAs($this->admin)->get(route('customer-amc-taggings.index', ['customer_type' => ['amc']]))
+            ->assertOk()->assertViewHas('records', fn ($records) => $records->total() === 0);
+    }
 }
