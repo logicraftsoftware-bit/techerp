@@ -71,8 +71,8 @@
     <header class="block">
         <img src="{{ asset('images/fieldservice-logo.png') }}" alt="IHHH">
         <h1>IHHH SALES &amp; SERVICE</h1>
-        <p>ADD - GB 45 NARAYANTALA (WEST) BAGUIATI,KOL - 700059</p>
-        <p>PH - 8670032150/9330087940/9062571995</p>
+        <p>GB 45 NARAYANTALA (WEST) BAGUIATI,KOL - 700059</p>
+        <p>8670032150/9330087940/9062571995</p>
     </header>
 
     <dl class="block grid meta">
