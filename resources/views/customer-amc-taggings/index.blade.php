@@ -57,7 +57,7 @@
 <div class="card tagging-results" x-data="{ expanded: null }">
     <div class="tagging-results-header"><div><strong>Customer Records</strong><p class="text-xs text-slate-400">{{ number_format($records->total()) }} matching records</p></div><span class="text-xs text-slate-400">Newest first</span></div>
     <div class="tagging-table-scroll"><table class="w-full text-left text-sm">
-        <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="p-4">Customer</th><th class="p-4">Machine</th><th class="p-4">AMC Plan</th><th class="p-4">Plan Price</th><th class="p-4">Services</th><th class="p-4">Payment</th><th class="p-4">Start Date</th><th class="p-4">End Date</th><th class="p-4">Status</th>@if($isAdmin)<th class="p-4 text-right">Actions</th>@endif</tr></thead>
+        <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="p-4">Customer</th><th class="p-4">Machine</th><th class="p-4">AMC Plan</th><th class="p-4">Plan Price</th><th class="p-4">Services</th><th class="p-4">Payment</th><th class="p-4">Start Date</th><th class="p-4">End Date</th><th class="p-4">Status</th><th class="p-4 text-right">Actions</th></tr></thead>
         <tbody class="divide-y">
         @forelse($records as $record)
             @php($daysLeft = $record->end_date ? today()->diffInDays($record->end_date, false) : null)
@@ -71,7 +71,7 @@
                 <td class="p-4 whitespace-nowrap">{{ $record->start_date?->format('d M Y') ?? '-' }}</td>
                 <td class="p-4 whitespace-nowrap font-semibold">{{ $record->end_date?->format('d M Y') ?? '-' }}</td>
                 <td class="p-4">@if($record->customer_type !== 'amc')<span class="status-badge status-muted">{{ $record->customer_type === 'in_warranty' ? 'In Warranty' : 'Out Of Warranty' }}</span>@elseif($daysLeft < 0)<span class="status-badge status-muted">Expired</span>@elseif($daysLeft <= 31)<span class="status-badge status-warning">Expires in {{ $daysLeft }} {{ $daysLeft === 1 ? 'day' : 'days' }}</span>@else<span class="status-badge status-success">Active</span>@endif</td>
-                @if($isAdmin)<td class="p-4"><div class="flex justify-end gap-2"><button type="button" @click="expanded = expanded === {{ $record->id }} ? null : {{ $record->id }}" class="table-action" aria-label="Show AMC service requests"><svg class="size-4 transition" :class="expanded === {{ $record->id }} && 'rotate-180'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button><a href="{{ route('customer-amc-taggings.edit', $record) }}" class="table-action">Edit</a><form method="POST" action="{{ route('customer-amc-taggings.destroy', $record) }}" onsubmit="return confirm('Delete this Customer-AMC tagging?')">@csrf @method('DELETE')<button class="table-action text-rose-600">Delete</button></form></div></td>@endif
+                <td class="p-4"><div class="flex justify-end gap-2 whitespace-nowrap"><a href="{{ route('customer-amc-taggings.show', $record) }}" class="table-action">View</a><a href="{{ route('customer-amc-taggings.show', ['customer_amc_tagging' => $record, 'print' => 1]) }}" target="_blank" rel="noopener" class="table-action">Print</a>@if($isAdmin)<button type="button" @click="expanded = expanded === {{ $record->id }} ? null : {{ $record->id }}" class="table-action" aria-label="Show AMC service requests"><svg class="size-4 transition" :class="expanded === {{ $record->id }} && 'rotate-180'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button><a href="{{ route('customer-amc-taggings.edit', $record) }}" class="table-action">Edit</a><form method="POST" action="{{ route('customer-amc-taggings.destroy', $record) }}" onsubmit="return confirm('Delete this Customer-AMC tagging?')">@csrf @method('DELETE')<button class="table-action text-rose-600">Delete</button></form>@endif</div></td>
             </tr>
             <tr x-cloak x-show="expanded === {{ $record->id }}" x-transition>
                 <td colspan="10" class="border-t border-blue-100 bg-blue-50/40 p-5">
@@ -106,7 +106,7 @@
                 </td>
             </tr>
         @empty
-            <tr><td colspan="{{ $isAdmin ? 10 : 9 }}" class="p-12 text-center text-slate-400">No Customer-AMC taggings found.</td></tr>
+            <tr><td colspan="10" class="p-12 text-center text-slate-400">No Customer-AMC taggings found.</td></tr>
         @endforelse
         </tbody>
     </table></div>

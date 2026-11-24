@@ -80,6 +80,16 @@ class CustomerAmcTaggingController extends Controller
         return view('customer-amc-taggings.index', compact('records', 'areas', 'models', 'machines'));
     }
 
+    public function show(Request $request, CustomerAmcTagging $customerAmcTagging): View
+    {
+        abort_unless($request->user()->hasRole('super-admin', 'admin') || $request->user()->hasPermission('customer-amc-taggings.view'), 403);
+
+        return view('customer-amc-taggings.bill', [
+            'record' => $customerAmcTagging->load(['customer', 'machine', 'amcPlan']),
+            'autoPrint' => $request->boolean('print'),
+        ]);
+    }
+
     public function create(): View
     {
         $this->authorizeAdmin();
