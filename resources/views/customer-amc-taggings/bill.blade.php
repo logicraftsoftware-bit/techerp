@@ -96,7 +96,16 @@
             <div><dt>Model</dt><dd>{{ $machine?->model ?: '—' }}</dd></div>
             <div><dt>Machine Code</dt><dd>{{ $machine?->machine_code ?? '—' }}</dd></div>
             <div><dt>Product Price</dt><dd>{{ $money($machine?->selling_price) }}</dd></div>
-            <div><dt>AMC Plan</dt><dd>{{ $plan?->plan_name ?? '—' }}</dd></div>
+            <div class="full">
+                <dt>Selected AMC Plan</dt>
+                <dd>
+                    @if($plan)
+                        {{ $plan->plan_name }} ({{ $plan->plan_code }}) · {{ str($plan->duration)->replace('_', ' ')->title() }}
+                    @else
+                        No AMC plan selected
+                    @endif
+                </dd>
+            </div>
             <div><dt>Start Date</dt><dd>{{ $record->start_date?->format('d-m-Y') ?? '—' }}</dd></div>
             <div><dt>End Date</dt><dd>{{ $record->end_date?->format('d-m-Y') ?? '—' }}</dd></div>
             <div><dt>Services Included</dt><dd>{{ $record->service_count ?? '—' }}</dd></div>
@@ -138,24 +147,26 @@
         <p class="signoff">Thanks &amp; Regards<br>IHHH SALES &amp; SERVICE</p>
     </section>
 
-    @if($bank || $qr)
-        <section class="block payment">
-            <div>
-                @if($bank)
-                    <h3>Bank Details</h3>
-                    @foreach($bank as $label => $value)
-                        <p><strong>{{ $label }}</strong> {{ $value }}</p>
-                    @endforeach
-                @endif
-            </div>
-            <div>
-                @if($qr)
-                    <h3>Scan This QR Code for Payment</h3>
-                    <img src="{{ asset($qr) }}" alt="IHHH payment QR code">
-                @endif
-            </div>
-        </section>
-    @endif
+    <section class="block payment">
+        <div>
+            <h3>Bank Details</h3>
+            @if($bank)
+                @foreach($bank as $label => $value)
+                    <p><strong>{{ $label }}</strong> {{ $value }}</p>
+                @endforeach
+            @else
+                <p>Contact IHHH Sales &amp; Service for bank details.</p>
+            @endif
+        </div>
+        <div>
+            <h3>Payment QR Code</h3>
+            @if($qr)
+                <img src="{{ asset($qr) }}" alt="Scan the IHHH QR code to pay">
+            @else
+                <p>Contact IHHH Sales &amp; Service for the payment QR code.</p>
+            @endif
+        </div>
+    </section>
 
     <footer><strong>Tuesday Closed</strong><p>This is a system-generated document. No signature is required.</p></footer>
 </main>
