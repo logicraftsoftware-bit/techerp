@@ -74,7 +74,11 @@
             <div><h1 class="text-lg font-bold text-slate-900">{{ $title ?? 'Dashboard' }}</h1><p class="hidden text-xs text-slate-400 sm:block">{{ now()->format('l, d F Y') }}</p></div>
             <div class="ml-auto flex items-center gap-3">
                 <button type="button" onclick="toggleTheme()" class="grid size-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-amber-300" aria-label="Toggle light and dark mode"><span class="dark:hidden">☾</span><span class="hidden dark:inline">☀</span></button>
-                <a href="{{ route('modules.show', 'notifications') }}" class="relative grid size-10 place-items-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50" aria-label="Notifications">🔔<span class="absolute right-2 top-2 size-2 rounded-full bg-rose-500 ring-2 ring-white"></span></a>
+                <a href="{{ route('notifications.index') }}" class="relative grid size-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white hover:bg-slate-50" aria-label="Notifications" @if(request()->routeIs('notifications.index')) aria-current="page" @endif
+                    @if(auth()->user()->hasRole('super-admin', 'admin')) data-notifications-url="{{ route('notifications.summary') }}" data-notifications-user="{{ auth()->id() }}" @endif>
+                    <span aria-hidden="true">🔔</span>
+                    <span data-notifications-count aria-hidden="true" hidden style="position:absolute;top:-5px;right:-6px;min-width:18px;padding:1px 4px;border-radius:999px;background:#be123c;color:white;font-size:10px;font-weight:700;text-align:center"></span>
+                </a>
                 <div class="relative" @click.outside="profile=false">
                     <button @click="profile=!profile" class="flex items-center gap-3 rounded-xl p-1.5 hover:bg-slate-50">
                         <span class="grid size-9 place-items-center rounded-xl bg-blue-600 font-bold text-white">{{ str(auth()->user()->name)->substr(0,1)->upper() }}</span>
@@ -94,5 +98,8 @@
         </main>
     </div>
 </div>
+@if(auth()->user()->hasRole('super-admin', 'admin'))
+    <script src="{{ asset('js/notification-bell.js') }}" defer></script>
+@endif
 @stack('scripts')
 </body></html>

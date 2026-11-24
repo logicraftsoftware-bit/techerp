@@ -16,6 +16,7 @@ use App\Http\Controllers\MachineController;
 use App\Http\Controllers\MachineImportController;
 use App\Http\Controllers\MachineInventoryController;
 use App\Http\Controllers\ModuleController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PartImportController;
 use App\Http\Controllers\PartsInventoryController;
 use App\Http\Controllers\ProfileController;
@@ -42,6 +43,8 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'active', RunMissedCheckInMarker::class])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/summary', [NotificationController::class, 'summary'])->name('notifications.summary');
     Route::get('/my-calendar', [SelfCalendarController::class, 'index'])->name('my-calendar.index');
     Route::post('/my-calendar/check-in', [SelfCalendarController::class, 'checkIn'])->name('my-calendar.check-in');
     Route::post('/my-calendar/check-out', [SelfCalendarController::class, 'checkOut'])->name('my-calendar.check-out');

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\CustomerAmcTagging;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +34,6 @@ class DashboardService
             'metrics' => $metrics,
             'charts' => $this->charts(),
             'recentUsers' => User::with('roles')->latest()->limit(5)->get(),
-            'expiringAmcs' => $this->expiringAmcs(),
         ];
     }
 
@@ -83,15 +81,4 @@ class DashboardService
         ];
     }
 
-    private function expiringAmcs()
-    {
-        if (! auth()->user()?->hasRole('super-admin', 'admin') || ! Schema::hasTable('customer_amc_taggings')) {
-            return collect();
-        }
-
-        return CustomerAmcTagging::with(['customer', 'machine', 'amcPlan'])
-            ->whereBetween('end_date', [today(), today()->addMonth()])
-            ->orderBy('end_date')
-            ->get();
-    }
 }
