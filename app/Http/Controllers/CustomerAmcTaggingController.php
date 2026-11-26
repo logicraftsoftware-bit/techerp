@@ -7,6 +7,7 @@ use App\Models\AmcPlan;
 use App\Models\Customer;
 use App\Models\CustomerAmcTagging;
 use App\Models\Machine;
+use App\Models\MachineCategory;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,7 @@ class CustomerAmcTaggingController extends Controller
     {
         abort_unless($request->user()->hasRole('super-admin', 'admin') || $request->user()->hasPermission('customer-amc-taggings.view'), 403);
         // Accept existing bookmarked single-value filters as well as multiple selections.
-        foreach (['customer_type', 'area', 'model', 'machine_id'] as $field) {
+        foreach (['customer_type', 'area', 'model', 'machine_id', 'machine_category_id'] as $field) {
             $value = $request->input($field);
             $request->merge([$field => is_array($value) ? $value : ($value !== null && $value !== '' ? [$value] : [])]);
         }
@@ -32,11 +33,13 @@ class CustomerAmcTaggingController extends Controller
             'model.*' => ['string', 'max:150'],
             'machine_id' => ['array', 'max:500'],
             'machine_id.*' => ['integer', 'exists:machines,id'],
+            'machine_category_id' => ['array', 'max:500'],
+            'machine_category_id.*' => ['integer', 'exists:machine_categories,id'],
             'from_date' => ['nullable', 'date'],
             'to_date' => ['nullable', 'date', ...($request->filled('from_date') ? ['after_or_equal:from_date'] : [])],
             'export' => ['nullable', 'in:csv,pdf'],
         ]);
-        $query = CustomerAmcTagging::with(['customer', 'machine', 'amcPlan'])
+        $query = CustomerAmcTagging::with(['customer', 'machine.machineCategory', 'amcPlan'])
             ->when($filters['search'] ?? null, function ($query, $search) {
                 $query->where(function ($nested) use ($search) {
                     $nested->whereHas('customer', fn ($q) => $q->where('customer_name', 'like', "%{$search}%")->orWhere('customer_code', 'like', "%{$search}%")->orWhere('mobile', 'like', "%{$search}%"))
@@ -48,6 +51,7 @@ class CustomerAmcTaggingController extends Controller
             ->when($filters['area'] ?? null, fn ($q, $value) => $q->whereHas('customer', fn ($c) => $c->whereIn('city', $value)))
             ->when($filters['model'] ?? null, fn ($q, $value) => $q->whereHas('machine', fn ($m) => $m->whereIn('model', $value)))
             ->when($filters['machine_id'] ?? null, fn ($q, $value) => $q->whereIn('machine_id', $value))
+            ->when($filters['machine_category_id'] ?? null, fn ($q, $value) => $q->whereHas('machine', fn ($m) => $m->whereIn('machine_category_id', $value)))
             ->when($filters['from_date'] ?? null, fn ($q, $value) => $q->whereDate('created_at', '>=', $value))
             ->when($filters['to_date'] ?? null, fn ($q, $value) => $q->whereDate('created_at', '<=', $value))
             ->orderByDesc('created_at')->orderByDesc('id');
@@ -56,20 +60,25 @@ class CustomerAmcTaggingController extends Controller
             return response()->streamDownload(function () use ($query) {
                 $file = fopen('php://output', 'w');
                 fwrite($file, "\xEF\xBB\xBF");
-                fputcsv($file, ['Customer', 'Customer Code', 'Mobile', 'Coverage Type', 'Area (City)', 'Machine', 'Model', 'AMC Plan', 'Plan Price', 'Services', 'Collection By', 'Paid Amount', 'Payment Method', 'Remarks', 'Start Date', 'End Date', 'Created Date']);
+                fputcsv($file, ['Customer', 'Customer Code', 'Mobile', 'Coverage Type', 'Area (City)', 'Machine', 'Model', 'AMC Plan', 'Plan Price', 'Services', 'Collection By', 'Paid Amount', 'Payment Method', 'Remarks', 'Start Date', 'End Date', 'Created Date', 'Category']);
                 foreach ($query->lazy(500) as $record) {
                     $row = [$record->customer->customer_name, $record->customer->customer_code, $record->customer->mobile,
                         $record->customer_type === 'amc' ? 'AMC' : ($record->customer_type === 'in_warranty' ? 'In Warranty' : 'Out Of Warranty'),
                         $record->customer->city, $record->machine->machine_name, $record->machine->model,
                         $record->amcPlan?->plan_name, $record->amcPlan?->price, $record->service_count,
                         $record->payment_collected_by, $record->paid_amount, $record->payment_method, $record->payment_remarks,
-                        $record->start_date?->toDateString(), $record->end_date?->toDateString(), $record->created_at->toDateString()];
+                        $record->start_date?->toDateString(), $record->end_date?->toDateString(), $record->created_at->toDateString(),
+                        $record->machine?->machineCategory?->category_name];
                     fputcsv($file, array_map(fn ($value) => is_string($value) && preg_match('/^[\s]*[=+@-]/', $value) ? "'".$value : $value, $row));
                 }
                 fclose($file);
             }, 'customer-taggings.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
         }
         if (($filters['export'] ?? null) === 'pdf') {
+            if ($filters['machine_category_id']) {
+                $filters['category'] = MachineCategory::whereKey($filters['machine_category_id'])->orderBy('category_name')->pluck('category_name')->all();
+                unset($filters['machine_category_id']);
+            }
             return \Barryvdh\DomPDF\Facade\Pdf::loadView('customer-amc-taggings.export', ['records' => $query->get(), 'filters' => $filters])
                 ->setPaper('a4', 'landscape')->download('customer-taggings.pdf');
         }
@@ -77,7 +86,8 @@ class CustomerAmcTaggingController extends Controller
         $areas = Customer::whereNotNull('city')->where('city', '!=', '')->distinct()->orderBy('city')->pluck('city');
         $models = Machine::whereNotNull('model')->where('model', '!=', '')->distinct()->orderBy('model')->pluck('model');
         $machines = Machine::orderBy('machine_name')->get(['id', 'machine_name', 'machine_code']);
-        return view('customer-amc-taggings.index', compact('records', 'areas', 'models', 'machines'));
+        $categories = MachineCategory::orderBy('category_name')->get(['id', 'category_name']);
+        return view('customer-amc-taggings.index', compact('records', 'areas', 'models', 'machines', 'categories'));
     }
 
     public function show(Request $request, CustomerAmcTagging $customerAmcTagging): View
@@ -136,7 +146,13 @@ class CustomerAmcTaggingController extends Controller
         return view('customer-amc-taggings.form', [
             'tagging' => $customerAmcTagging,
             'customers' => Customer::orderBy('customer_name')->get(['id', 'customer_code', 'customer_name', 'mobile'])->map(fn ($customer) => ['id' => $customer->id, 'label' => "{$customer->customer_name} ({$customer->customer_code}) · {$customer->mobile}"]),
-            'machines' => Machine::where('status', 'active')->orderBy('machine_name')->get(['id', 'machine_code', 'machine_name', 'model'])->map(fn ($machine) => ['id' => $machine->id, 'label' => "{$machine->machine_name} ({$machine->machine_code})".($machine->model ? " · {$machine->model}" : '')]),
+            'machines' => Machine::with('machineCategory')->where('status', 'active')->orderBy('machine_name')
+                ->get(['id', 'machine_code', 'machine_name', 'model', 'machine_category_id'])
+                ->map(fn ($machine) => [
+                    'id' => $machine->id,
+                    'label' => "{$machine->machine_name} ({$machine->machine_code})".($machine->model ? " · {$machine->model}" : ''),
+                    'category' => $machine->machineCategory?->category_name,
+                ]),
             'plans' => AmcPlan::where('status', 'active')->orderBy('plan_name')->get(['id', 'plan_code', 'plan_name', 'duration', 'price'])->map(fn ($plan) => ['id' => $plan->id, 'label' => "{$plan->plan_name} ({$plan->plan_code}) · ".str($plan->duration)->replace('_', ' ')->title(), 'duration' => $plan->duration, 'price' => (float) $plan->price]),
         ]);
     }

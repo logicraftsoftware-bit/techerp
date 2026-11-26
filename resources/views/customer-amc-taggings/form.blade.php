@@ -22,7 +22,7 @@
     $paymentMethods = [['id' => 'cash', 'label' => 'Cash'], ['id' => 'upi', 'label' => 'UPI'], ['id' => 'card', 'label' => 'Card'], ['id' => 'bank_transfer', 'label' => 'Bank Transfer'], ['id' => 'cheque', 'label' => 'Cheque']];
 @endphp
 <form method="POST" action="{{ $tagging->exists ? route('customer-amc-taggings.update', $tagging) : route('customer-amc-taggings.store') }}" class="amc-tagging-form"
-      x-data="amcTaggingForm(@js($plans), @js(['customerType' => old('customer_type', $tagging->customer_type ?? 'amc'), 'planId' => (string) old('amc_plan_id', $tagging->amc_plan_id), 'startDate' => old('start_date', $tagging->start_date?->format('Y-m-d')), 'paymentBy' => old('payment_collected_by', $tagging->payment_collected_by)]))"
+      x-data="amcTaggingForm(@js($plans), @js($machines->pluck('category', 'id')), @js(['customerType' => old('customer_type', $tagging->customer_type ?? 'amc'), 'machineId' => (string) old('machine_id', $tagging->machine_id), 'planId' => (string) old('amc_plan_id', $tagging->amc_plan_id), 'startDate' => old('start_date', $tagging->start_date?->format('Y-m-d')), 'paymentBy' => old('payment_collected_by', $tagging->payment_collected_by)]))"
       @searchable-select-changed.window="selectChanged($event.detail)">
     @csrf @if($tagging->exists) @method('PUT') @endif
     <div class="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><div><h2 class="text-2xl font-bold text-slate-900">{{ $tagging->exists ? 'Edit' : 'Add' }} Customer-AMC Tagging</h2><p class="text-sm text-slate-500">Select a customer, a machine and the customer coverage type.</p></div><button class="btn-primary">Save Tagging</button></div>
@@ -30,6 +30,7 @@
         <div class="amc-customer-picker"><button type="button" class="btn-secondary amc-new-customer" @click="$dispatch('open-customer')">New +</button>
         @include('master._searchable_select', ['name' => 'customer_id', 'label' => 'Choose Customer', 'options' => $customers, 'labelKey' => 'label', 'selected' => $tagging->customer_id, 'placeholder' => 'Search or select customer', 'required' => true])</div>
         @include('master._searchable_select', ['name' => 'machine_id', 'label' => 'Choose Machine from Machine Master', 'options' => $machines, 'labelKey' => 'label', 'selected' => $tagging->machine_id, 'placeholder' => 'Search by machine name, code or model', 'required' => true])
+        <div><label class="form-label" for="machine-category">Category</label><input id="machine-category" type="text" :value="machineId ? (machineCategories[machineId] ?? 'Uncategorized') : ''" class="form-input bg-slate-50" placeholder="Select a machine" readonly></div>
         <div><label class="form-label">Customer Type *</label><select name="customer_type" x-model="customerType" class="form-input" required><option value="in_warranty">In Warranty</option><option value="amc">AMC</option><option value="out_of_warranty">Out Of Warranty</option></select></div>
         <div x-cloak x-show="customerType === 'amc'" class="contents"><fieldset :disabled="customerType !== 'amc'" class="contents">
         @include('master._searchable_select', ['name' => 'amc_plan_id', 'label' => 'Choose AMC Plan', 'options' => $plans, 'labelKey' => 'label', 'selected' => $tagging->amc_plan_id, 'placeholder' => 'Search or select AMC plan', 'required' => true])
@@ -56,10 +57,12 @@
 
 @push('scripts')
 <script>
-function amcTaggingForm(plans, initial) {
+function amcTaggingForm(plans, machineCategories, initial) {
     return {
         customerType: initial.customerType || 'amc', plans, planId: initial.planId || '', startDate: initial.startDate || '', paymentBy: initial.paymentBy || '',
+        machineCategories, machineId: initial.machineId,
         selectChanged(detail) {
+            if (detail.name === 'machine_id') this.machineId = detail.value;
             if (detail.name === 'amc_plan_id') this.planId = detail.value;
             if (detail.name === 'payment_collected_by') this.paymentBy = detail.value;
         },

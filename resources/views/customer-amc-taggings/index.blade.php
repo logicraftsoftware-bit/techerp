@@ -46,6 +46,7 @@
         <div><label class="form-label" for="search">Search</label><input id="search" name="search" value="{{ request('search') }}" class="form-input" placeholder="Customer, mobile, machine or plan"></div>
         @include('master._searchable_multiselect', ['name' => 'customer_type', 'label' => 'Customer Type', 'options' => collect(['in_warranty' => 'In Warranty', 'amc' => 'AMC', 'out_of_warranty' => 'Out Of Warranty'])->map(fn ($label, $value) => ['value' => $value, 'label' => $label])->values()])
         @include('master._searchable_multiselect', ['name' => 'area', 'label' => 'Area (Customer City)', 'options' => $areas->map(fn ($area) => ['value' => $area, 'label' => $area])])
+        @include('master._searchable_multiselect', ['name' => 'machine_category_id', 'label' => 'Category', 'options' => $categories->map(fn ($category) => ['value' => (string) $category->id, 'label' => $category->category_name])])
         @include('master._searchable_multiselect', ['name' => 'machine_id', 'label' => 'Machine', 'options' => $machines->map(fn ($machine) => ['value' => (string) $machine->id, 'label' => $machine->machine_name.' ('.$machine->machine_code.')'])])
         @include('master._searchable_multiselect', ['name' => 'model', 'label' => 'Model', 'options' => $models->map(fn ($model) => ['value' => $model, 'label' => $model])])
         <div><label class="form-label" for="from-date">From Date (Created)</label><input id="from-date" type="date" name="from_date" value="{{ request('from_date') }}" class="form-input"></div>
@@ -57,13 +58,14 @@
 <div class="card tagging-results" x-data="{ expanded: null }">
     <div class="tagging-results-header"><div><strong>Customer Records</strong><p class="text-xs text-slate-400">{{ number_format($records->total()) }} matching records</p></div><span class="text-xs text-slate-400">Newest first</span></div>
     <div class="tagging-table-scroll"><table class="w-full text-left text-sm">
-        <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="p-4">Customer</th><th class="p-4">Machine</th><th class="p-4">AMC Plan</th><th class="p-4">Plan Price</th><th class="p-4">Services</th><th class="p-4">Payment</th><th class="p-4">Start Date</th><th class="p-4">End Date</th><th class="p-4">Status</th><th class="p-4 text-right">Actions</th></tr></thead>
+        <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="p-4">Customer</th><th class="p-4">Machine</th><th class="p-4">Category</th><th class="p-4">AMC Plan</th><th class="p-4">Plan Price</th><th class="p-4">Services</th><th class="p-4">Payment</th><th class="p-4">Start Date</th><th class="p-4">End Date</th><th class="p-4">Status</th><th class="p-4 text-right">Actions</th></tr></thead>
         <tbody class="divide-y">
         @forelse($records as $record)
             @php($daysLeft = $record->end_date ? today()->diffInDays($record->end_date, false) : null)
             <tr :class="expanded === {{ $record->id }} && 'bg-blue-50/30'">
                 <td class="p-4"><span class="font-semibold text-slate-800 customer-name">{{ $record->customer->customer_name }}</span><div class="text-xs text-slate-400">{{ $record->customer->customer_code }} &middot; {{ $record->customer->city }}</div><span class="coverage-pill">{{ $record->customer_type === 'amc' ? 'AMC' : ($record->customer_type === 'in_warranty' ? 'In Warranty' : 'Out Of Warranty') }}</span></td>
                 <td class="p-4">{{ $record->machine->machine_name }}<div class="text-xs text-slate-400">{{ $record->machine->machine_code }}{{ $record->machine->model ? ' · '.$record->machine->model : '' }}</div></td>
+                <td class="p-4">{{ $record->machine?->machineCategory?->category_name ?? 'Uncategorized' }}</td>
                 <td class="p-4">{{ $record->amcPlan?->plan_name ?? '-' }}<div class="text-xs text-slate-400">{{ $record->amcPlan?->plan_code ?? '-' }} · {{ str($record->amcPlan?->duration)->replace('_', ' ')->title() }}</div></td>
                 <td class="p-4 whitespace-nowrap font-semibold">₹{{ number_format((float) $record->amcPlan?->price, 2) }}</td>
                 <td class="p-4 font-semibold">{{ $record->service_count }}</td>
@@ -74,7 +76,7 @@
                 <td class="p-4"><div class="flex justify-end gap-2 whitespace-nowrap"><a href="{{ route('customer-amc-taggings.show', $record) }}" class="table-action">View</a><a href="{{ route('customer-amc-taggings.show', ['customer_amc_tagging' => $record, 'print' => 1]) }}" target="_blank" rel="noopener" class="table-action">Print</a>@if($isAdmin)<button type="button" @click="expanded = expanded === {{ $record->id }} ? null : {{ $record->id }}" class="table-action" aria-label="Show AMC service requests"><svg class="size-4 transition" :class="expanded === {{ $record->id }} && 'rotate-180'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button><a href="{{ route('customer-amc-taggings.edit', $record) }}" class="table-action">Edit</a><form method="POST" action="{{ route('customer-amc-taggings.destroy', $record) }}" onsubmit="return confirm('Delete this Customer-AMC tagging?')">@csrf @method('DELETE')<button class="table-action text-rose-600">Delete</button></form>@endif</div></td>
             </tr>
             <tr x-cloak x-show="expanded === {{ $record->id }}" x-transition>
-                <td colspan="10" class="border-t border-blue-100 bg-blue-50/40 p-5">
+                <td colspan="11" class="border-t border-blue-100 bg-blue-50/40 p-5">
                     <div class="mb-3 flex items-center justify-between"><div><h3 class="font-semibold text-slate-900">AMC Service Requests</h3><p class="text-xs text-slate-500">{{ $record->serviceRequests->count() }} of {{ $record->service_count }} service slots created</p></div></div>
                     @if($record->service_count > 0)
                     <div class="space-y-2">
@@ -106,7 +108,7 @@
                 </td>
             </tr>
         @empty
-            <tr><td colspan="10" class="p-12 text-center text-slate-400">No Customer-AMC taggings found.</td></tr>
+            <tr><td colspan="11" class="p-12 text-center text-slate-400">No Customer-AMC taggings found.</td></tr>
         @endforelse
         </tbody>
     </table></div>

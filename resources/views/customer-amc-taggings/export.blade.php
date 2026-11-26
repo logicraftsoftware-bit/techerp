@@ -9,7 +9,7 @@ body { font-family: DejaVu Sans, sans-serif; color: #334155; font-size: 9px; } h
 @forelse($records as $record)<tr>
 <td>{{ $record->customer->customer_name }}<br><span class="muted">{{ $record->customer->customer_code }}<br>{{ $record->customer->city }}<br>{{ $record->customer->mobile }}</span></td>
 <td>{{ $record->customer_type === 'amc' ? 'AMC' : ($record->customer_type === 'in_warranty' ? 'In Warranty' : 'Out Of Warranty') }}</td>
-<td>{{ $record->machine->machine_name }}<br><span class="muted">{{ $record->machine->model }}<br>{{ $record->machine->machine_code }}</span></td>
+<td>{{ $record->machine->machine_name }}<br><span class="muted">{{ $record->machine->model }}<br>{{ $record->machine->machine_code }}<br>Category: {{ $record->machine?->machineCategory?->category_name ?? 'Uncategorized' }}</span></td>
 <td>{{ $record->amcPlan?->plan_name ?? '-' }}</td><td>{{ $record->amcPlan ? number_format((float) $record->amcPlan->price, 2) : '-' }}</td><td>{{ $record->service_count }}</td>
 <td>{{ $record->payment_collected_by ? str($record->payment_collected_by)->title() : '-' }}<br>{{ $record->paid_amount !== null ? number_format((float) $record->paid_amount, 2) : '-' }}<br>{{ $record->payment_method }}</td>
 <td>{{ $record->start_date?->format('d M Y') ?? '-' }}<br>{{ $record->end_date?->format('d M Y') ?? '-' }}</td>
