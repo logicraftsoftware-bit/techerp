@@ -95,7 +95,7 @@ class CustomerAmcTaggingController extends Controller
         abort_unless($request->user()->hasRole('super-admin', 'admin') || $request->user()->hasPermission('customer-amc-taggings.view'), 403);
 
         return view('customer-amc-taggings.bill', [
-            'record' => $customerAmcTagging->load(['customer', 'machine', 'amcPlan']),
+            'record' => $customerAmcTagging->load(['customer', 'machine.machineCategory', 'amcPlan']),
             'autoPrint' => $request->boolean('print'),
         ]);
     }

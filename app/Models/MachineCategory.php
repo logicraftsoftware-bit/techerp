@@ -6,5 +6,5 @@ use Illuminate\Database\Eloquent\Model;
 
 class MachineCategory extends Model
 {
-    protected $fillable = ['category_name'];
+    protected $fillable = ['category_name', 'terms_and_conditions'];
 }

@@ -15,7 +15,9 @@
         .bill { background: #fff; border: 2px solid; overflow-wrap: anywhere; }
         .block { padding: 3mm; border-bottom: 1px solid; }
         header, h2, .notice, footer { text-align: center; }
-        header img { width: 36mm; height: 16mm; object-fit: contain; }
+        .brand-logos { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 3mm; margin: 2mm 0; }
+        .brand-logos img { width: 25mm; height: 8mm; object-fit: contain; }
+        .brand-logos .eureka-logo { object-fit: cover; }
         h1 { margin: 1mm 0; font-size: 19pt; }
         h2 { margin: 0 0 2mm; font-size: 11pt; text-transform: uppercase; }
         h3, p { margin: 0; }
@@ -30,6 +32,9 @@
         dd { margin: 0; flex: 1; min-width: 0; border-bottom: 1px dotted #777; font-weight: bold; }
         ul { margin: 1mm 0 2mm; padding-left: 5mm; }
         li + li { margin-top: 1mm; }
+        .terms-content :is(h1, h2, h3, h4, h5, h6) { margin: 2mm 0 1mm; font-size: 1em; text-align: left; text-transform: none; break-after: avoid; }
+        .terms-content p + p { margin-top: 1mm; }
+        .terms-content img { max-width: 100%; height: auto; }
         .checks { padding-left: 5mm; margin: 0; font-weight: bold; }
         .checks li { margin: 0; }
         .signoff { margin-top: 2mm; text-align: right; font-weight: bold; }
@@ -47,6 +52,8 @@
             .toolbar { display: none; }
             .bill { width: 100%; margin: 0; }
             .block, footer { break-inside: avoid; }
+            .terms { break-inside: auto; }
+            .terms > h2 { break-after: avoid; }
             .block, .payment > div { padding: 2mm 3mm; }
             .payment { padding: 0; }
             .grid { row-gap: .6mm; }
@@ -58,6 +65,7 @@
 @php
     $customer = $record->customer;
     $machine = $record->machine;
+    $terms = $machine?->machineCategory?->terms_and_conditions;
     $plan = $record->amcPlan;
     $money = fn ($amount) => $amount === null ? '—' : '₹'.number_format((float) $amount, 2);
     $bank = array_filter(config('amc_billing.bank'));
@@ -69,8 +77,12 @@
 </nav>
 <main class="bill">
     <header class="block">
-        <img src="{{ asset('images/fieldservice-logo.png') }}" alt="IHHH">
         <h1>IHHH SALES &amp; SERVICE</h1>
+        <div class="brand-logos">
+            <img class="eureka-logo" src="{{ asset('images/amc-eureka-forbes.png') }}" alt="Eureka Forbes">
+            <img src="{{ asset('images/amc-kutchina.jpg') }}" alt="Kutchina">
+            <img src="{{ asset('images/amc-propello.webp') }}" alt="Propello">
+        </div>
         <p>GB 45 NARAYANTALA (WEST) BAGUIATI,KOL - 700059</p>
         <p>8670032150/9330087940/9062571995</p>
     </header>
@@ -121,20 +133,14 @@
         </dl>
     </section>
 
-    <section class="block">
+    @if(filled($terms))
+    <section class="block terms">
         <h2>Terms &amp; Conditions</h2>
-        <h3>What is Covered</h3>
-        <ul>
-            <li><strong>Functional Spares (if under a parts-inclusive AMC):</strong> Covers functional spare parts and repair labor via Kutchina or authorized service centers.</li>
-            <li><strong>Diagnosis &amp; Repairs:</strong> Complete diagnosis of mechanical or electrical components like fan motors and wiring issues.</li>
-        </ul>
-        <h3>What is Excluded</h3>
-        <ul>
-            <li><strong>Consumables &amp; Exterior Parts:</strong> Lamps, knobs, filters, glass panels, oil collectors, plastic/rubber parts, cords, and installation fittings are generally excluded unless explicitly stated.</li>
-            <li><strong>External Damages:</strong> Does not cover damage caused by normal wear and tear, physical abuse, tampering, voltage fluctuations, power short circuits, or acts of God.</li>
-            <li><strong>Third-Party Service:</strong> Repairs, modifications, or servicing carried out by unauthorized technicians or external personnel void the contract and warranty.</li>
-        </ul>
+        <div class="terms-content">
+            {!! \Illuminate\Support\Str::markdown($terms, ['html_input' => 'strip', 'allow_unsafe_links' => false]) !!}
+        </div>
     </section>
+    @endif
 
     <section class="block">
         <h2>Mandatory Checks During Agreement Period</h2>
@@ -168,7 +174,7 @@
         </div>
     </section>
 
-    <footer><strong>Tuesday Closed</strong><p>This is a system-generated document. No signature is required.</p></footer>
+    <footer><p>This is a system-generated document. No signature is required.</p></footer>
 </main>
 @if($autoPrint)
     <script>

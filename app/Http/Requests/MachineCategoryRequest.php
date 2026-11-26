@@ -16,6 +16,7 @@ class MachineCategoryRequest extends FormRequest
     {
         return [
             'category_name' => ['required', 'string', 'max:120', Rule::unique('machine_categories')->ignore($this->route('machine_category')?->id)],
+            'terms_and_conditions' => ['nullable', 'string'],
         ];
     }
 }
